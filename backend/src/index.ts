@@ -23,8 +23,13 @@ const app: Application = express();
 const PORT = Number(process.env.PORT) || 5000;
 
 // Middleware
+// Allow all origins in production (Railway), specific origins in development
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? '*' 
+  : ['http://localhost:3000', 'http://192.168.1.56:3000', 'http://192.168.1.5:3000'];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://192.168.1.56:3000', 'http://192.168.1.5:3000'],
+  origin: allowedOrigins,
   credentials: true
 }));
 // Increase body size limit to 50MB for image uploads
