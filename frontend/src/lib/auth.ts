@@ -145,6 +145,7 @@ export const enroll2FA = async (): Promise<{
   error: AuthError | null;
 }> => {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.mfa.enroll({
       factorType: 'totp',
       friendlyName: 'Authenticator App',
@@ -183,6 +184,7 @@ export const verify2FA = async (
   code: string
 ): Promise<{ success: boolean; error: AuthError | null }> => {
   try {
+    const supabase = getSupabaseClient();
     // First, create a challenge
     const { data: challengeData, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId });
@@ -219,6 +221,7 @@ export const listMFAFactors = async (): Promise<{
   error: AuthError | null;
 }> => {
   try {
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase.auth.mfa.listFactors();
 
     if (error) {
@@ -238,6 +241,7 @@ export const unenroll2FA = async (
   factorId: string
 ): Promise<{ success: boolean; error: AuthError | null }> => {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
 
     if (error) {
@@ -257,6 +261,7 @@ export const requestPasswordReset = async (
   email: string
 ): Promise<{ success: boolean; error: AuthError | null }> => {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
@@ -278,6 +283,7 @@ export const updatePassword = async (
   newPassword: string
 ): Promise<{ success: boolean; error: AuthError | null }> => {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -317,6 +323,7 @@ export const getAuthErrorMessage = (error: any): string => {
  */
 export const isSessionValid = async (): Promise<boolean> => {
   try {
+    const supabase = getSupabaseClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -334,6 +341,7 @@ export const refreshSession = async (): Promise<{
   error: AuthError | null;
 }> => {
   try {
+    const supabase = getSupabaseClient();
     const { error } = await supabase.auth.refreshSession();
 
     if (error) {

@@ -687,12 +687,12 @@ export default function SubscribersPage() {
                             <p className="text-gray-900 dark:text-white">{selectedSubscriber.agents?.email}</p>
                           </div>
                         )}
-                        {selectedSubscriber.agents?.phone && (
+                        {selectedSubscriber.agents?.contact_number && (
                           <div>
                             <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                               Agent Phone
                             </label>
-                            <p className="text-gray-900 dark:text-white">{selectedSubscriber.agents?.phone}</p>
+                            <p className="text-gray-900 dark:text-white">{selectedSubscriber.agents?.contact_number}</p>
                           </div>
                         )}
                       </div>
