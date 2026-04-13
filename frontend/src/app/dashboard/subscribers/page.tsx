@@ -660,14 +660,6 @@ export default function SubscribersPage() {
                           </label>
                           <p className="text-gray-900 dark:text-white font-semibold">₱{selectedSubscriber.plans?.price}</p>
                         </div>
-                        {selectedSubscriber.plans?.description && (
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                              Plan Description
-                            </label>
-                            <p className="text-gray-900 dark:text-white">{selectedSubscriber.plans?.description}</p>
-                          </div>
-                        )}
                       </div>
                     </div>
 
