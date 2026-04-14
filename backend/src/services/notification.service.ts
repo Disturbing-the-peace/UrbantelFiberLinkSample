@@ -1,18 +1,16 @@
 /**
  * Notification Service
  * 
- * Handles multi-channel notifications (SMS and Facebook Messenger)
- * for application status changes.
+ * Handles SMS notifications for application status changes.
  * 
- * Note: SMS Gateway and Messenger API integrations are placeholder implementations
- * that should be replaced with actual provider integrations.
+ * Note: SMS Gateway integration is a placeholder implementation
+ * that should be replaced with actual provider integration.
  */
 
 export interface NotificationRecipient {
   name: string;
   phone?: string;
   email?: string;
-  messengerLink?: string;
 }
 
 export interface NotificationPayload {
@@ -23,7 +21,7 @@ export interface NotificationPayload {
 
 export interface NotificationResult {
   success: boolean;
-  channel: 'sms' | 'messenger';
+  channel: 'sms';
   error?: string;
 }
 
@@ -99,93 +97,19 @@ class SMSGatewayService {
 }
 
 /**
- * Facebook Messenger Service (Placeholder Implementation)
- * 
- * Replace this with actual Messenger API integration
- */
-class MessengerService {
-  private accessToken: string;
-  private apiUrl: string;
-
-  constructor() {
-    // Load from environment variables
-    this.accessToken = process.env.MESSENGER_ACCESS_TOKEN || 'placeholder-access-token';
-    this.apiUrl = process.env.MESSENGER_API_URL || 'https://graph.facebook.com/v18.0/me/messages';
-  }
-
-  /**
-   * Send Facebook Messenger message
-   * 
-   * @param messengerLink - Recipient's Messenger link or user ID
-   * @param message - Message content
-   * @returns Promise with result
-   */
-  async sendMessage(messengerLink: string, message: string): Promise<NotificationResult> {
-    try {
-      // Validate messenger link
-      if (!messengerLink || messengerLink.trim() === '') {
-        return {
-          success: false,
-          channel: 'messenger',
-          error: 'Invalid messenger link',
-        };
-      }
-
-      // TODO: Replace with actual Messenger API call
-      // Example:
-      // const recipientId = this.extractRecipientId(messengerLink);
-      // const response = await fetch(this.apiUrl, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${this.accessToken}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     recipient: { id: recipientId },
-      //     message: { text: message },
-      //   }),
-      // });
-
-      console.log(`[Messenger] Sending message to ${messengerLink}: ${message}`);
-      
-      // Simulate successful send in development
-      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-        console.log('[Messenger] Message sent successfully (simulated)');
-        return {
-          success: true,
-          channel: 'messenger',
-        };
-      }
-
-      // In production, this should throw an error if not configured
-      throw new Error('Messenger API not configured. Please set MESSENGER_ACCESS_TOKEN and MESSENGER_API_URL');
-    } catch (error) {
-      console.error('[Messenger] Error sending message:', error);
-      return {
-        success: false,
-        channel: 'messenger',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
-}
-
-/**
  * Main Notification Service
  * 
- * Orchestrates multi-channel notifications
+ * Orchestrates SMS notifications
  */
 export class NotificationService {
   private smsGateway: SMSGatewayService;
-  private messenger: MessengerService;
 
   constructor() {
     this.smsGateway = new SMSGatewayService();
-    this.messenger = new MessengerService();
   }
 
   /**
-   * Send notification via all available channels
+   * Send notification via SMS
    * 
    * @param payload - Notification payload with recipient and message
    * @returns Array of results for each channel
@@ -200,15 +124,6 @@ export class NotificationService {
         payload.message
       );
       results.push(smsResult);
-    }
-
-    // Send Messenger if messenger link is provided (even if empty, to get validation error)
-    if (payload.recipient.messengerLink !== undefined) {
-      const messengerResult = await this.messenger.sendMessage(
-        payload.recipient.messengerLink,
-        payload.message
-      );
-      results.push(messengerResult);
     }
 
     return results;

@@ -31,39 +31,6 @@ describe('NotificationService', () => {
       expect(results[0].success).toBe(true);
     });
 
-    it('should send Messenger when messenger link is provided', async () => {
-      const recipient: NotificationRecipient = {
-        name: 'John Doe',
-        messengerLink: 'https://m.me/johndoe',
-      };
-
-      const results = await notificationService.sendNotification({
-        recipient,
-        message: 'Test message',
-      });
-
-      expect(results).toHaveLength(1);
-      expect(results[0].channel).toBe('messenger');
-      expect(results[0].success).toBe(true);
-    });
-
-    it('should send both SMS and Messenger when both are provided', async () => {
-      const recipient: NotificationRecipient = {
-        name: 'John Doe',
-        phone: '+1234567890',
-        messengerLink: 'https://m.me/johndoe',
-      };
-
-      const results = await notificationService.sendNotification({
-        recipient,
-        message: 'Test message',
-      });
-
-      expect(results).toHaveLength(2);
-      expect(results.some(r => r.channel === 'sms')).toBe(true);
-      expect(results.some(r => r.channel === 'messenger')).toBe(true);
-    });
-
     it('should return empty array when no contact info is provided', async () => {
       const recipient: NotificationRecipient = {
         name: 'John Doe',
@@ -92,22 +59,6 @@ describe('NotificationService', () => {
       expect(results[0].success).toBe(false);
       expect(results[0].error).toBe('Invalid phone number');
     });
-
-    it('should handle invalid messenger link', async () => {
-      const recipient: NotificationRecipient = {
-        name: 'John Doe',
-        messengerLink: '',
-      };
-
-      const results = await notificationService.sendNotification({
-        recipient,
-        message: 'Test message',
-      });
-
-      expect(results).toHaveLength(1);
-      expect(results[0].success).toBe(false);
-      expect(results[0].error).toBe('Invalid messenger link');
-    });
   });
 
   describe('sendStatusChangeNotification', () => {
@@ -121,7 +72,6 @@ describe('NotificationService', () => {
       name: 'Agent Smith',
       phone: '+0987654321',
       email: 'agent@example.com',
-      messengerLink: 'https://m.me/agentsmith',
     };
 
     it('should send notifications for Activated status', async () => {

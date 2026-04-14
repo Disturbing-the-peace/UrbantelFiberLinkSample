@@ -17,7 +17,6 @@ export interface Agent {
   referral_code: string;
   contact_number?: string;
   email?: string;
-  messenger_link?: string;
   role?: string;
   is_active: boolean;
   created_at: string;

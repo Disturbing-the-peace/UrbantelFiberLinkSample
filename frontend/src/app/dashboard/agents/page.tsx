@@ -484,7 +484,6 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
     name: agent?.name || '',
     contact_number: agent?.contact_number || '',
     email: agent?.email || '',
-    messenger_link: agent?.messenger_link || '',
     role: agent?.role || '',
     is_active: agent?.is_active ?? true,
   });
@@ -582,19 +581,6 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
               <option value="Team Leader">Team Leader</option>
             </select>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select a role or leave as "No Role"</p>
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Messenger Link
-            </label>
-            <input
-              type="url"
-              value={formData.messenger_link}
-              onChange={(e) => setFormData({ ...formData, messenger_link: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="https://m.me/username"
-            />
           </div>
 
           {agent && (

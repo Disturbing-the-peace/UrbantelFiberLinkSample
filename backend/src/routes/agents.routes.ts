@@ -24,7 +24,7 @@ const generateReferralCode = (): string => {
  */
 router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
-    const { name, contact_number, email, messenger_link, role } = req.body;
+    const { name, contact_number, email, role } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -65,7 +65,6 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
         referral_code: referralCode,
         contact_number: contact_number?.trim() || null,
         email: email?.trim() || null,
-        messenger_link: messenger_link?.trim() || null,
         role: role?.trim() || null,
         is_active: true,
       })
@@ -174,7 +173,7 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
 router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, contact_number, email, messenger_link, role, is_active } = req.body;
+    const { name, contact_number, email, role, is_active } = req.body;
 
     // Check if agent exists
     const { data: existing, error: fetchError } = await supabase
@@ -192,7 +191,6 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
     if (name !== undefined) updates.name = name.trim();
     if (contact_number !== undefined) updates.contact_number = contact_number?.trim() || null;
     if (email !== undefined) updates.email = email?.trim() || null;
-    if (messenger_link !== undefined) updates.messenger_link = messenger_link?.trim() || null;
     if (role !== undefined) updates.role = role?.trim() || null;
     if (is_active !== undefined) updates.is_active = is_active;
 
