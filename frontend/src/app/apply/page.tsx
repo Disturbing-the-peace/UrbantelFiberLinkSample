@@ -13,7 +13,7 @@ function ApplicationFormContent() {
   const searchParams = useSearchParams();
   const agentRef = searchParams.get('ref');
   const toast = useToast();
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -348,10 +348,10 @@ function ApplicationFormContent() {
 
   if (!agentRef) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Referral Link</h1>
-          <p className="text-gray-600">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full">
+          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Invalid Referral Link</h1>
+          <p className="text-gray-600 dark:text-gray-300">
             This application form requires a valid agent referral code. Please contact your agent for the correct link.
           </p>
         </div>
@@ -361,18 +361,18 @@ function ApplicationFormContent() {
 
   if (submitSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <div className="mb-4">
-            <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 text-green-500 dark:text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Application Submitted!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Application Submitted!</h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Thank you for your application. We will review your information and contact you soon.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Your application has been successfully submitted and is now under review.
           </p>
         </div>
@@ -381,9 +381,26 @@ function ApplicationFormContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-4 sm:py-12 px-3 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-12 px-3 sm:px-6 lg:px-8 relative transition-colors duration-300">
+      {/* Theme Toggle Button - Top Right */}
+      <button
+        onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+        className="fixed top-4 right-4 z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-200 dark:border-gray-700"
+        title={resolvedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {resolvedTheme === 'dark' ? (
+          <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+        )}
+      </button>
+
       {/* Background Logos - Lower Right */}
-      <div className="fixed bottom-8 right-8 flex items-center gap-4 opacity-20 pointer-events-none z-0">
+      <div className="fixed bottom-8 right-8 flex items-center gap-4 opacity-20 dark:opacity-10 pointer-events-none z-0">
         <img 
           src="/cverge.png" 
           alt="Converge" 
@@ -440,7 +457,7 @@ function ApplicationFormContent() {
         </div>
 
         {/* Card Container */}
-        <div className="bg-white shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300">
+        <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300">
           {/* Header with Banner Background */}
           <div 
             className="relative px-4 sm:px-6 py-8 sm:py-12 text-white bg-cover bg-center"
@@ -451,7 +468,7 @@ function ApplicationFormContent() {
             }}
           >
             {/* Overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-indigo-900/80"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-indigo-900/80 dark:from-blue-950/90 dark:to-indigo-950/90"></div>
             
             {/* Content */}
             <div className="relative z-10 flex items-center gap-4">
@@ -472,7 +489,7 @@ function ApplicationFormContent() {
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 lg:p-8 min-h-[400px] sm:min-h-[500px]">
+          <div className="p-4 sm:p-6 lg:p-8 min-h-[400px] sm:min-h-[500px] bg-white dark:bg-gray-800 transition-colors duration-300">
             {/* Step 1: Personal Information */}
             {currentStep === 1 && (
               <div className="space-y-4 sm:space-y-6">
@@ -501,7 +518,7 @@ function ApplicationFormContent() {
                 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       First Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -513,15 +530,15 @@ function ApplicationFormContent() {
                       required
                       minLength={2}
                       maxLength={100}
-                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.firstName 
                           ? 'border-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:border-blue-500'
+                          : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                       placeholder="Isulod ang imong ngalan"
                     />
                     {validationErrors.firstName && (
-                      <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
@@ -531,7 +548,7 @@ function ApplicationFormContent() {
                   </div>
 
                   <div>
-                    <label htmlFor="middleName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="middleName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Middle Name
                     </label>
                     <input
@@ -541,13 +558,13 @@ function ApplicationFormContent() {
                       value={middleName}
                       onChange={(e) => setMiddleName(e.target.value)}
                       maxLength={100}
-                      className="w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Isulod ang tunga nga ngalan (opsyonal)"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Last Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -559,15 +576,15 @@ function ApplicationFormContent() {
                       required
                       minLength={2}
                       maxLength={100}
-                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.lastName 
                           ? 'border-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:border-blue-500'
+                          : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                       placeholder="Isulod ang imong apelyido"
                     />
                     {validationErrors.lastName && (
-                      <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
@@ -577,7 +594,7 @@ function ApplicationFormContent() {
                   </div>
 
                   <div>
-                    <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Birthday <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -589,25 +606,25 @@ function ApplicationFormContent() {
                       required
                       max={new Date().toISOString().split('T')[0]}
                       min={new Date(new Date().getFullYear() - 120, 0, 1).toISOString().split('T')[0]}
-                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.birthday 
                           ? 'border-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:border-blue-500'
+                          : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     />
                     {validationErrors.birthday && (
-                      <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         {validationErrors.birthday}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">Kinahanglan 18 anyos pataas</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Kinahanglan 18 anyos pataas</p>
                   </div>
 
                   <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -619,22 +636,22 @@ function ApplicationFormContent() {
                       required
                       pattern="^(09|\+639)[0-9]{9}$"
                       maxLength={11}
-                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.phoneNumber 
                           ? 'border-red-500 focus:border-red-500' 
-                          : 'border-gray-300 focus:border-blue-500'
+                          : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                       placeholder="09123456789"
                     />
                     {validationErrors.phoneNumber && (
-                      <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         {validationErrors.phoneNumber}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">11 ka numero (e.g., 09123456789)</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">11 ka numero (e.g., 09123456789)</p>
                   </div>
                 </div>
               </div>
@@ -691,7 +708,7 @@ function ApplicationFormContent() {
                 {selectedCategory && !selectedPlanType && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         Pilia ang Tipo sa Plano
                       </h3>
                       <button
@@ -701,7 +718,7 @@ function ApplicationFormContent() {
                           setSelectedPlanType(null);
                           setSelectedPlanId('');
                         }}
-                        className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center"
+                        className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium flex items-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -713,11 +730,11 @@ function ApplicationFormContent() {
                     {loading ? (
                       <div className="text-center py-12">
                         <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-teal-600"></div>
-                        <p className="mt-4 text-gray-600">Nag-load sa mga plano...</p>
+                        <p className="mt-4 text-gray-600 dark:text-gray-300">Nag-load sa mga plano...</p>
                       </div>
                     ) : planTypes.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <p className="text-gray-600">Walay {selectedCategory} nga plano karon.</p>
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <p className="text-gray-600 dark:text-gray-300">Walay {selectedCategory} nga plano karon.</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -784,7 +801,7 @@ function ApplicationFormContent() {
                 {selectedCategory && selectedPlanType && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {selectedPlanType}
                       </h3>
                       <button
@@ -793,7 +810,7 @@ function ApplicationFormContent() {
                           setSelectedPlanType(null);
                           setSelectedPlanId('');
                         }}
-                        className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center"
+                        className="text-sm text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium flex items-center"
                       >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -826,21 +843,21 @@ function ApplicationFormContent() {
                           </div>
 
                           {/* Plan Details - White Background */}
-                          <div className="bg-white px-6 py-6 text-left">
+                          <div className="bg-white dark:bg-gray-700 px-6 py-6 text-left">
                             {/* Plan Name */}
-                            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
                               {plan.name.replace(/FiberX|Super|Netflix|GameChanger/gi, '').trim() || plan.name}
                             </h3>
 
                             {/* Description */}
-                            <p className="text-gray-600 text-sm mb-4 min-h-[40px]">
+                            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 min-h-[40px]">
                               {plan.inclusions.slice(0, 2).join(' • ')}
                             </p>
 
                             {/* Price */}
                             <div className="flex items-baseline mb-6">
-                              <span className="text-teal-600 text-3xl font-bold">₱{plan.price.toLocaleString()}</span>
-                              <span className="text-gray-600 text-lg ml-1">/mo</span>
+                              <span className="text-teal-600 dark:text-teal-400 text-3xl font-bold">₱{plan.price.toLocaleString()}</span>
+                              <span className="text-gray-600 dark:text-gray-400 text-lg ml-1">/mo</span>
                             </div>
 
                             {/* Select Button */}
@@ -854,11 +871,11 @@ function ApplicationFormContent() {
 
                             {/* All Inclusions - Small Text */}
                             {plan.inclusions.length > 1 && (
-                              <div className="mt-4 pt-4 border-t border-gray-100">
-                                <p className="text-xs text-gray-500 font-medium mb-2">Naglakip:</p>
+                              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-600">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2">Naglakip:</p>
                                 <ul className="space-y-1">
                                   {plan.inclusions.map((inclusion, idx) => (
-                                    <li key={idx} className="text-xs text-gray-600 flex items-start">
+                                    <li key={idx} className="text-xs text-gray-600 dark:text-gray-300 flex items-start">
                                       <svg className="w-3 h-3 text-teal-500 mr-1.5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                       </svg>
@@ -872,8 +889,8 @@ function ApplicationFormContent() {
 
                           {/* Selected Indicator Badge */}
                           {selectedPlanId === plan.id && (
-                            <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg">
-                              <svg className="w-6 h-6 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+                            <div className="absolute top-4 right-4 bg-white dark:bg-gray-700 rounded-full p-2 shadow-lg">
+                              <svg className="w-6 h-6 text-teal-600 dark:text-teal-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                             </div>
@@ -889,12 +906,12 @@ function ApplicationFormContent() {
             {/* Step 3: Location */}
             {currentStep === 3 && (
               <div className="space-y-4">
-                <p className="text-gray-600 text-sm sm:text-base mb-4">
+                <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mb-4">
                   📍 I-klik o i-tap ang mapa aron pilion ang eksaktong lokasyon sa pag-install
                 </p>
                 {!canProceedToStep4 && location && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
-                    <p className="text-xs sm:text-sm text-yellow-800 flex items-center">
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+                    <p className="text-xs sm:text-sm text-yellow-800 dark:text-yellow-200 flex items-center">
                       <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
@@ -903,8 +920,8 @@ function ApplicationFormContent() {
                   </div>
                 )}
                 {canProceedToStep4 && (
-                  <div className="p-3 bg-green-50 border border-green-300 rounded-lg mb-4">
-                    <p className="text-xs sm:text-sm text-green-800 flex items-center">
+                  <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg mb-4">
+                    <p className="text-xs sm:text-sm text-green-800 dark:text-green-200 flex items-center">
                       <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
@@ -923,8 +940,8 @@ function ApplicationFormContent() {
             {currentStep === 4 && (
               <div className="space-y-6">
                 {!canSubmit && (
-                  <div className="p-3 bg-teal-50 border border-teal-300 rounded-lg mb-4">
-                    <p className="text-xs sm:text-sm text-teal-800 flex items-center">
+                  <div className="p-3 bg-teal-50 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700 rounded-lg mb-4">
+                    <p className="text-xs sm:text-sm text-teal-800 dark:text-teal-200 flex items-center">
                       <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                       </svg>
@@ -1044,10 +1061,10 @@ function ApplicationFormContent() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
               {submitError && (
-                <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-xs sm:text-sm text-red-600">{submitError}</p>
+                <div className="mb-4 p-3 sm:p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+                  <p className="text-xs sm:text-sm text-red-600 dark:text-red-300">{submitError}</p>
                 </div>
               )}
               
@@ -1056,7 +1073,7 @@ function ApplicationFormContent() {
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="px-4 sm:px-6 py-3 bg-gray-100 text-gray-700 text-sm sm:text-base font-medium rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-all flex items-center touch-manipulation"
+                    className="px-4 sm:px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm sm:text-base font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 active:bg-gray-300 dark:active:bg-gray-500 transition-all flex items-center touch-manipulation"
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1064,7 +1081,7 @@ function ApplicationFormContent() {
                     Balik
                   </button>
                 ) : (
-                  <div className="text-xs sm:text-sm text-gray-500">
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     Ref: <span className="font-mono font-semibold">{agentRef}</span>
                   </div>
                 )}
@@ -1122,7 +1139,7 @@ function ApplicationFormContent() {
 export default function ApplicationForm() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
       </div>
     }>
