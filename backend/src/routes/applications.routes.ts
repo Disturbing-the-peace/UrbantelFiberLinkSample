@@ -77,6 +77,43 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/applications/public/:agentId
+ * Get applications for a specific agent (PUBLIC - no auth required)
+ * Used by agent portal
+ */
+router.get('/public/:agentId', async (req: Request, res: Response) => {
+  try {
+    const { agentId } = req.params;
+
+    const { data: applications, error } = await supabase
+      .from('applications')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        contact_number,
+        address,
+        status,
+        status_reason,
+        created_at,
+        plans:plan_id (name, speed, price)
+      `)
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching public applications:', error);
+      return res.status(500).json({ error: 'Failed to fetch applications' });
+    }
+
+    res.json(applications || []);
+  } catch (error) {
+    console.error('Error in GET /api/applications/public/:agentId:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/applications/:id
  * Get a single application by ID with full details
  */

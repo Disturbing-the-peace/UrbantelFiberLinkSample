@@ -24,11 +24,16 @@ const generateReferralCode = (): string => {
  */
 router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
-    const { name, contact_number, email, role } = req.body;
+    const { name, contact_number, email, role, team_leader_id } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Agent name is required' });
+    }
+
+    // Validate that team leaders don't have a team leader
+    if (role === 'Team Leader' && team_leader_id) {
+      return res.status(400).json({ error: 'Team Leaders cannot be assigned to another team leader' });
     }
 
     // Generate unique referral code
@@ -66,6 +71,7 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
         contact_number: contact_number?.trim() || null,
         email: email?.trim() || null,
         role: role?.trim() || null,
+        team_leader_id: team_leader_id || null,
         is_active: true,
       })
       .select()
@@ -125,7 +131,19 @@ router.get('/by-referral/:referralCode', async (req: Request, res: Response) => 
 
     const { data: agent, error } = await supabase
       .from('agents')
-      .select('id, name, referral_code, contact_number, email')
+      .select(`
+        id, 
+        name, 
+        referral_code, 
+        contact_number, 
+        email,
+        role,
+        team_leader:team_leader_id (
+          id,
+          name,
+          referral_code
+        )
+      `)
       .eq('referral_code', referralCode)
       .eq('is_active', true)
       .single();
@@ -173,7 +191,7 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
 router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, contact_number, email, role, is_active } = req.body;
+    const { name, contact_number, email, role, team_leader_id, is_active } = req.body;
 
     // Check if agent exists
     const { data: existing, error: fetchError } = await supabase
@@ -186,12 +204,26 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Agent not found' });
     }
 
+    // Validate that team leaders don't have a team leader
+    if (role === 'Team Leader' && team_leader_id) {
+      return res.status(400).json({ error: 'Team Leaders cannot be assigned to another team leader' });
+    }
+
     // Build update object
     const updates: Partial<Agent> = {};
     if (name !== undefined) updates.name = name.trim();
     if (contact_number !== undefined) updates.contact_number = contact_number?.trim() || null;
     if (email !== undefined) updates.email = email?.trim() || null;
-    if (role !== undefined) updates.role = role?.trim() || null;
+    if (role !== undefined) {
+      updates.role = role?.trim() || null;
+      // Clear team_leader_id if role is Team Leader
+      if (role === 'Team Leader') {
+        updates.team_leader_id = undefined;
+      }
+    }
+    if (team_leader_id !== undefined && role !== 'Team Leader') {
+      updates.team_leader_id = team_leader_id || undefined;
+    }
     if (is_active !== undefined) updates.is_active = is_active;
 
     // Validate at least one field to update

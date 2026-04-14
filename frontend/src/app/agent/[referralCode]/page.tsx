@@ -12,6 +12,12 @@ interface Agent {
   referral_code: string;
   contact_number?: string;
   email?: string;
+  role?: string;
+  team_leader?: {
+    id: string;
+    name: string;
+    referral_code: string;
+  };
 }
 
 interface Subscriber {
@@ -21,6 +27,22 @@ interface Subscriber {
   contact_number: string;
   address: string;
   activated_at: string;
+  plans?: {
+    name: string;
+    speed: string;
+    price: number;
+  };
+}
+
+interface Application {
+  id: string;
+  first_name: string;
+  last_name: string;
+  contact_number: string;
+  address: string;
+  status: string;
+  status_reason?: string;
+  created_at: string;
   plans?: {
     name: string;
     speed: string;
@@ -52,10 +74,11 @@ export default function AgentPortalPage() {
 
   const [agent, setAgent] = useState<Agent | null>(null);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'subscribers' | 'commissions'>('subscribers');
+  const [activeTab, setActiveTab] = useState<'applicants' | 'subscribers' | 'commissions'>('applicants');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -205,9 +228,23 @@ export default function AgentPortalPage() {
       const agentData = await agentResponse.json();
       setAgent(agentData);
 
-      // Fetch subscribers
+      // Fetch applications using public endpoint
+      const applicationsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/applications/public/${agentData.id}`
+      );
+
+      if (applicationsResponse.ok) {
+        const applicationsData = await applicationsResponse.json();
+        // Filter out activated applications - they should only appear in Subscribers tab
+        const filteredApplications = applicationsData.filter(
+          (app: Application) => app.status !== 'Activated'
+        );
+        setApplications(filteredApplications);
+      }
+
+      // Fetch subscribers using public endpoint
       const subscribersResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/subscribers?agent_id=${agentData.id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/subscribers/public/${agentData.id}`
       );
 
       if (subscribersResponse.ok) {
@@ -215,9 +252,9 @@ export default function AgentPortalPage() {
         setSubscribers(subscribersData);
       }
 
-      // Fetch commissions
+      // Fetch commissions using public endpoint
       const commissionsResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/commissions?agent_id=${agentData.id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/commissions/public/${agentData.id}`
       );
 
       if (commissionsResponse.ok) {
@@ -243,6 +280,10 @@ export default function AgentPortalPage() {
     .filter((c) => c.status === 'Paid')
     .reduce((sum, c) => sum + c.amount, 0);
 
+  const pendingApplications = applications.filter(
+    (app) => !['Activated', 'Denied', 'Voided'].includes(app.status)
+  ).length;
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       Pending: 'bg-yellow-100 text-yellow-800',
@@ -250,6 +291,19 @@ export default function AgentPortalPage() {
       Paid: 'bg-green-100 text-green-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getApplicationStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'Submitted': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200',
+      'Under Review': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200',
+      'Approved': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200',
+      'Scheduled for Installation': 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200',
+      'Activated': 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200',
+      'Denied': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200',
+      'Voided': 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
+    };
+    return colors[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
   };
 
   if (loading) {
@@ -302,19 +356,39 @@ export default function AgentPortalPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Image
-                src={resolvedTheme === 'dark' ? "/urbantelwhite.png" : "/urbantel.png"}
-                alt="UrbanTel"
+                src="/lobosw.png"
+                alt="UrbanTel FiberLink"
                 width={50}
                 height={50}
                 className="object-contain"
               />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Agent Portal
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {agent.name}
-                </p>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {agent.name}
+                  </h1>
+                  {agent.role && (
+                    <span className="px-3 py-1 text-sm font-semibold rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200">
+                      {agent.role}
+                    </span>
+                  )}
+                </div>
+                {agent.team_leader ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Under: <span className="font-medium text-gray-900 dark:text-white">{agent.team_leader.name}</span>
+                    <span className="text-gray-500 dark:text-gray-500 ml-2 font-mono text-xs">
+                      ({agent.team_leader.referral_code})
+                    </span>
+                  </p>
+                ) : agent.role === 'Team Leader' ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Independent Team Leader
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Independent Agent
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -335,19 +409,19 @@ export default function AgentPortalPage() {
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total Subscribers
+              Pending Applications
             </div>
-            <div className="text-3xl font-bold mt-2" style={{ color: '#00A191' }}>
-              {subscribers.length}
+            <div className="text-3xl font-bold mt-2 text-orange-600 dark:text-orange-500">
+              {pendingApplications}
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Pending Commissions
+              Total Subscribers
             </div>
-            <div className="text-3xl font-bold mt-2 text-yellow-600 dark:text-yellow-500">
-              ₱{totalCommissionsPending.toFixed(2)}
+            <div className="text-3xl font-bold mt-2" style={{ color: '#00A191' }}>
+              {subscribers.length}
             </div>
           </div>
 
@@ -371,10 +445,20 @@ export default function AgentPortalPage() {
         </div>
 
         {/* Tabs */}
-        <div className="relative z-10 flex gap-4 mb-6">
+        <div className="relative z-10 flex gap-4 mb-6 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('applicants')}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+              activeTab === 'applicants'
+                ? 'bg-teal-600 text-white shadow-md'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+            }`}
+          >
+            Applicants ({applications.length})
+          </button>
           <button
             onClick={() => setActiveTab('subscribers')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'subscribers'
                 ? 'bg-teal-600 text-white shadow-md'
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
@@ -384,7 +468,7 @@ export default function AgentPortalPage() {
           </button>
           <button
             onClick={() => setActiveTab('commissions')}
-            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+            className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'commissions'
                 ? 'bg-teal-600 text-white shadow-md'
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
@@ -395,7 +479,77 @@ export default function AgentPortalPage() {
         </div>
 
         {/* Content */}
-        {activeTab === 'subscribers' ? (
+        {activeTab === 'applicants' ? (
+          <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Applicant
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Plan
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Address
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Applied
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {applications.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                        No applications yet
+                      </td>
+                    </tr>
+                  ) : (
+                    applications.map((application) => (
+                      <tr key={application.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {application.first_name} {application.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {application.contact_number}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-gray-900 dark:text-white">{application.plans?.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {application.plans?.speed} - ₱{application.plans?.price}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                          {application.address}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${getApplicationStatusColor(application.status)}`}>
+                            {application.status}
+                          </span>
+                          {application.status_reason && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {application.status_reason}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(application.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : activeTab === 'subscribers' ? (
           <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
             <div className="overflow-x-auto">
               <table className="min-w-full">

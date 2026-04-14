@@ -18,6 +18,7 @@ export interface Agent {
   contact_number?: string;
   email?: string;
   role?: string;
+  team_leader_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

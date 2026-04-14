@@ -17,7 +17,8 @@ export default function AgentsPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'no-role'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'Agent'>('all');
+  const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
   
   const toast = useToast();
 
@@ -50,15 +51,24 @@ export default function AgentsPage() {
 
     // Role filter
     if (roleFilter !== 'all') {
-      if (roleFilter === 'no-role') {
+      if (roleFilter === 'Agent') {
         filtered = filtered.filter(agent => !agent.role);
       } else {
         filtered = filtered.filter(agent => agent.role === roleFilter);
       }
     }
 
+    // Team Leader filter
+    if (teamLeaderFilter !== 'all') {
+      if (teamLeaderFilter === 'no-leader') {
+        filtered = filtered.filter(agent => !agent.team_leader_id);
+      } else {
+        filtered = filtered.filter(agent => agent.team_leader_id === teamLeaderFilter);
+      }
+    }
+
     setFilteredAgents(filtered);
-  }, [agents, searchQuery, statusFilter, roleFilter]);
+  }, [agents, searchQuery, statusFilter, roleFilter, teamLeaderFilter]);
 
   const fetchAgents = async () => {
     try {
@@ -179,9 +189,9 @@ export default function AgentsPage() {
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4 transition-colors duration-300 border border-[#C9B8EC]">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search */}
-          <div className="md:col-span-2">
+          <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Search
             </label>
@@ -222,18 +232,40 @@ export default function AgentsPage() {
             </label>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'Team Leader' | 'no-role')}
+              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'Team Leader' | 'Agent')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00A191] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="all">All Roles</option>
               <option value="Team Leader">Team Leader</option>
-              <option value="no-role">No Role</option>
+              <option value="Agent">Agent</option>
+            </select>
+          </div>
+
+          {/* Team Leader Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Team Leader
+            </label>
+            <select
+              value={teamLeaderFilter}
+              onChange={(e) => setTeamLeaderFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00A191] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="all">All</option>
+              <option value="no-leader">No Team Leader</option>
+              {agents
+                .filter(agent => agent.role === 'Team Leader' && agent.is_active)
+                .map(leader => (
+                  <option key={leader.id} value={leader.id}>
+                    {leader.name}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
 
         {/* Clear Filters */}
-        {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all') && (
+        {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || teamLeaderFilter !== 'all') && (
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Showing {filteredAgents.length} of {agents.length} agents
@@ -243,6 +275,7 @@ export default function AgentsPage() {
                 setSearchQuery('');
                 setStatusFilter('all');
                 setRoleFilter('all');
+                setTeamLeaderFilter('all');
               }}
               className="text-sm text-[#00A191] hover:text-[#008c7d] font-medium"
             >
@@ -300,7 +333,9 @@ export default function AgentsPage() {
                         {agent.role}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400 dark:text-gray-500">-</span>
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        Agent
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -393,7 +428,9 @@ export default function AgentsPage() {
                       {agent.role}
                     </span>
                   ) : (
-                    <span className="text-sm text-gray-400 dark:text-gray-500">No Role</span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                      Agent
+                    </span>
                   )}
                 </div>
                 
@@ -485,11 +522,27 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
     contact_number: agent?.contact_number || '',
     email: agent?.email || '',
     role: agent?.role || '',
+    team_leader_id: agent?.team_leader_id || '',
     is_active: agent?.is_active ?? true,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [teamLeaders, setTeamLeaders] = useState<Agent[]>([]);
   const toast = useToast();
+
+  useEffect(() => {
+    // Fetch team leaders for the dropdown
+    const fetchTeamLeaders = async () => {
+      try {
+        const data = await agentsApi.getAll();
+        const leaders = data.filter((a: Agent) => a.role === 'Team Leader' && a.is_active);
+        setTeamLeaders(leaders);
+      } catch (err) {
+        console.error('Error fetching team leaders:', err);
+      }
+    };
+    fetchTeamLeaders();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -574,14 +627,46 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
             </label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => {
+                const newRole = e.target.value;
+                setFormData({ 
+                  ...formData, 
+                  role: newRole,
+                  // Clear team_leader_id if role is Team Leader
+                  team_leader_id: newRole === 'Team Leader' ? '' : formData.team_leader_id
+                });
+              }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">No Role</option>
+              <option value="">Agent</option>
               <option value="Team Leader">Team Leader</option>
             </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select a role or leave as "No Role"</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select a role for this agent</p>
           </div>
+
+          {/* Only show team leader dropdown if agent is not a team leader */}
+          {formData.role !== 'Team Leader' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Team Leader (Optional)
+              </label>
+              <select
+                value={formData.team_leader_id}
+                onChange={(e) => setFormData({ ...formData, team_leader_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">No Team Leader</option>
+                {teamLeaders.map((leader) => (
+                  <option key={leader.id} value={leader.id}>
+                    {leader.name} ({leader.referral_code})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Assign this agent to a team leader
+              </p>
+            </div>
+          )}
 
           {agent && (
             <div className="mb-4">

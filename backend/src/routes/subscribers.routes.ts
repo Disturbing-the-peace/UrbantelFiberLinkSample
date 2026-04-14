@@ -56,6 +56,42 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/subscribers/public/:agentId
+ * Get subscribers for a specific agent (PUBLIC - no auth required)
+ * Used by agent portal
+ */
+router.get('/public/:agentId', async (req: Request, res: Response) => {
+  try {
+    const { agentId } = req.params;
+
+    const { data: subscribers, error } = await supabase
+      .from('applications')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        contact_number,
+        address,
+        activated_at,
+        plans:plan_id (name, speed, price)
+      `)
+      .eq('agent_id', agentId)
+      .eq('status', 'Activated')
+      .order('activated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching public subscribers:', error);
+      return res.status(500).json({ error: 'Failed to fetch subscribers' });
+    }
+
+    res.json(subscribers || []);
+  } catch (error) {
+    console.error('Error in GET /api/subscribers/public/:agentId:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/subscribers/:id
  * Get a single subscriber by ID with full details
  */

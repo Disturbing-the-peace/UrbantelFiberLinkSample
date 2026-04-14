@@ -101,6 +101,44 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/commissions/public/:agentId
+ * Get commissions for a specific agent (PUBLIC - no auth required)
+ * Used by agent portal
+ */
+router.get('/public/:agentId', async (req: Request, res: Response) => {
+  try {
+    const { agentId } = req.params;
+
+    const { data: commissions, error } = await supabase
+      .from('commissions')
+      .select(`
+        id,
+        amount,
+        status,
+        date_activated,
+        date_paid,
+        applications:subscriber_id (
+          first_name,
+          last_name,
+          plans:plan_id (name, speed, price)
+        )
+      `)
+      .eq('agent_id', agentId)
+      .order('date_activated', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching public commissions:', error);
+      return res.status(500).json({ error: 'Failed to fetch commissions' });
+    }
+
+    res.json(commissions || []);
+  } catch (error) {
+    console.error('Error in GET /api/commissions/public/:agentId:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * PUT /api/commissions/:id/status
  * Update commission status with validation
  * Body: { status: string }
