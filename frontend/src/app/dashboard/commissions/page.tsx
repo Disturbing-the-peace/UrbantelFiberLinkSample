@@ -63,6 +63,19 @@ export default function CommissionsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentFilter, statusFilter]);
 
+  // Lock body scroll when modals are open
+  useEffect(() => {
+    if (editingCommission || deletingCommission) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [editingCommission, deletingCommission]);
+
   const fetchAgents = async () => {
     try {
       const data = await agentsApi.getAll();
@@ -230,7 +243,8 @@ export default function CommissionsPage() {
           </div>
         )}
         
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#C9B8EC]">
             <thead className="bg-[#00A191]">
               <tr>
@@ -350,6 +364,133 @@ export default function CommissionsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {commissions.map((commission) => (
+            <div key={commission.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <div className="space-y-3">
+                {/* Subscriber Name */}
+                <div className="flex items-start justify-between">
+                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                    {commission.applications?.first_name} {commission.applications?.last_name}
+                  </div>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                      commission.status
+                    )}`}
+                  >
+                    {commission.status}
+                  </span>
+                </div>
+
+                {/* Commission Amount - Highlighted */}
+                <div className="bg-[#00A191]/10 dark:bg-[#00A191]/20 rounded-lg p-3 border border-[#00A191]/30">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Commission Amount</div>
+                  <div className="text-2xl font-bold text-[#00A191]">
+                    ₱{commission.amount.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* Agent Info */}
+                <div className="flex items-center gap-2 text-sm">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <div>
+                    <span className="text-gray-700 dark:text-gray-300">{commission.agents?.name}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2 font-mono text-xs">
+                      {commission.agents?.referral_code}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Plan Info */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    {commission.applications?.plans?.name}
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {commission.applications?.plans?.speed}
+                    </span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      ₱{commission.applications?.plans?.price}/mo
+                    </span>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>Activated: {new Date(commission.date_activated).toLocaleDateString()}</span>
+                </div>
+
+                {commission.date_paid && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Paid: {new Date(commission.date_paid).toLocaleDateString()}</span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  {canUpdateStatus(commission.status) && (
+                    <button
+                      onClick={() =>
+                        updateCommissionStatus(
+                          commission.id,
+                          getNextStatus(commission.status)!
+                        )
+                      }
+                      disabled={updatingId === commission.id}
+                      className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                    >
+                      {updatingId === commission.id ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Mark {getNextStatus(commission.status)}
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setEditingCommission(commission)}
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setDeletingCommission(commission)}
+                    className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {commissions.length === 0 && !loading && (

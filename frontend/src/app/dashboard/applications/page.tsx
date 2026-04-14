@@ -120,14 +120,29 @@ export default function ApplicationsPage() {
 
       const response = await exportApi.subscriberDocuments(applicationId);
 
+      console.log('Download response status:', response.status);
+      console.log('Download response headers:', response.headers);
+
       if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = 'Failed to download documents';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Response might not be JSON
+        }
+
         // Check if it's a 404 (no documents found)
         if (response.status === 404) {
           setErrorMessage('No documents available for this application. Documents may not have been uploaded yet.');
           setShowErrorModal(true);
           return;
         }
-        throw new Error('Failed to download documents');
+        
+        setErrorMessage(errorMessage);
+        setShowErrorModal(true);
+        return;
       }
 
       // Get the filename from Content-Disposition header or use default
@@ -142,6 +157,14 @@ export default function ApplicationsPage() {
 
       // Download the file
       const blob = await response.blob();
+      console.log('Blob size:', blob.size, 'type:', blob.type);
+      
+      if (blob.size === 0) {
+        setErrorMessage('Downloaded file is empty. The documents may not be available.');
+        setShowErrorModal(true);
+        return;
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -152,7 +175,7 @@ export default function ApplicationsPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Error downloading documents:', err);
-      setErrorMessage('Failed to download documents. Please try again or contact support if the issue persists.');
+      setErrorMessage(`Failed to download documents: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again or contact support if the issue persists.`);
       setShowErrorModal(true);
     } finally {
       setDownloadingDocs((prev) => ({ ...prev, [applicationId]: false }));
@@ -287,26 +310,27 @@ export default function ApplicationsPage() {
           </div>
         )}
         
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#C9B8EC]">
             <thead className="bg-[#00A191]">
               <tr>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Customer
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Plan
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Agent
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Submitted
                 </th>
-                <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Actions
                 </th>
               </tr>
@@ -314,7 +338,7 @@ export default function ApplicationsPage() {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {applications.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 md:px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500 text-sm">
                     No applications found. Try adjusting your filters.
                   </td>
                 </tr>
@@ -325,20 +349,20 @@ export default function ApplicationsPage() {
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-l-4 border-transparent hover:border-l-[#00A191]"
                   onClick={() => handleViewDetails(application.id)}
                 >
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                    <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {application.first_name} {application.last_name}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{application.contact_number}</div>
                   </td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                    <div className="text-xs md:text-sm text-gray-900 dark:text-white">{application.plans?.name}</div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">{application.plans?.name}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">{application.plans?.speed}</div>
                   </td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                    <div className="text-xs md:text-sm text-gray-900 dark:text-white">{application.agents?.name}</div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-white">{application.agents?.name}</div>
                   </td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
                         application.status
@@ -347,10 +371,10 @@ export default function ApplicationsPage() {
                       {application.status}
                     </span>
                   </td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {new Date(application.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleViewDetails(application.id)}
@@ -385,6 +409,95 @@ export default function ApplicationsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {applications.length === 0 && !loading ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No applications found. Try adjusting your filters.
+            </div>
+          ) : (
+            applications.map((application) => (
+              <div 
+                key={application.id} 
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => handleViewDetails(application.id)}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      {application.first_name} {application.last_name}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{application.contact_number}</p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(
+                      application.status
+                    )}`}
+                  >
+                    {application.status}
+                  </span>
+                </div>
+
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16">Plan:</span>
+                    <div>
+                      <span className="text-sm text-gray-900 dark:text-white">{application.plans?.name}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">({application.plans?.speed})</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16">Agent:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">{application.agents?.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16">Date:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">
+                      {new Date(application.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => handleViewDetails(application.id)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#00A191] hover:text-[#008c7a] bg-[#00A191]/10 hover:bg-[#00A191]/20 rounded transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleDownloadDocuments(application.id)}
+                    disabled={downloadingDocs[application.id]}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#00A191] hover:text-[#008c7a] bg-[#00A191]/10 hover:bg-[#00A191]/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloadingDocs[application.id] ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                        </svg>
+                        Docs
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -444,6 +557,14 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'customer' | 'plan' | 'agent' | 'documents'>('customer');
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const statusRequiresReason = ['Denied', 'Voided'].includes(selectedStatus);
 

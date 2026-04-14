@@ -246,16 +246,6 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/apply"
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl text-white transition-all transform hover:scale-105 hover:shadow-xl"
-                  style={{ backgroundColor: '#00A191' }}
-                >
-                  Apply for Service
-                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </Link>
-                <Link
                   href="/login"
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl bg-transparent border-2 border-[#00A191] text-[#00A191] hover:bg-[#00A191] hover:text-white"
                 >
@@ -355,21 +345,21 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer with Logos - Lower Right */}
-      <div className="absolute bottom-8 right-8 z-10 flex items-center gap-6">
+      {/* Footer with Logos - Lower Center on Mobile, Lower Right on Desktop */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-8 md:right-8 md:left-auto md:translate-x-0 z-10 flex items-center gap-3 md:gap-6">
         <Image
           src={resolvedTheme === 'dark' ? "/urbantelwhite.png" : "/urbantel.png"}
           alt="UrbanTel"
-          width={100}
-          height={100}
-          className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+          width={50}
+          height={50}
+          className="object-contain opacity-30 md:opacity-80 hover:opacity-100 transition-opacity md:w-[100px] md:h-[100px]"
         />
         <Image
           src="/cverge.png"
           alt="Cverge"
-          width={100}
-          height={100}
-          className="object-contain opacity-80 hover:opacity-100 transition-opacity"
+          width={50}
+          height={50}
+          className="object-contain opacity-30 md:opacity-80 hover:opacity-100 transition-opacity md:w-[100px] md:h-[100px]"
         />
       </div>
     </div>

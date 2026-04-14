@@ -513,7 +513,7 @@ function ApplicationFormContent() {
                       required
                       minLength={2}
                       maxLength={100}
-                      className={`w-full px-3 sm:px-4 py-3 text-base border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.firstName 
                           ? 'border-red-500 focus:border-red-500' 
                           : 'border-gray-300 focus:border-blue-500'
@@ -541,7 +541,7 @@ function ApplicationFormContent() {
                       value={middleName}
                       onChange={(e) => setMiddleName(e.target.value)}
                       maxLength={100}
-                      className="w-full px-3 sm:px-4 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Isulod ang tunga nga ngalan (opsyonal)"
                     />
                   </div>
@@ -559,7 +559,7 @@ function ApplicationFormContent() {
                       required
                       minLength={2}
                       maxLength={100}
-                      className={`w-full px-3 sm:px-4 py-3 text-base border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.lastName 
                           ? 'border-red-500 focus:border-red-500' 
                           : 'border-gray-300 focus:border-blue-500'
@@ -589,7 +589,7 @@ function ApplicationFormContent() {
                       required
                       max={new Date().toISOString().split('T')[0]}
                       min={new Date(new Date().getFullYear() - 120, 0, 1).toISOString().split('T')[0]}
-                      className={`w-full px-3 sm:px-4 py-3 text-base border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.birthday 
                           ? 'border-red-500 focus:border-red-500' 
                           : 'border-gray-300 focus:border-blue-500'
@@ -619,7 +619,7 @@ function ApplicationFormContent() {
                       required
                       pattern="^(09|\+639)[0-9]{9}$"
                       maxLength={11}
-                      className={`w-full px-3 sm:px-4 py-3 text-base border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 bg-white border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
                         validationErrors.phoneNumber 
                           ? 'border-red-500 focus:border-red-500' 
                           : 'border-gray-300 focus:border-blue-500'

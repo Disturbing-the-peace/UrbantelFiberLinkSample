@@ -519,6 +519,24 @@ function LoginPageContent() {
               </a>
             </div>
           </div>
+
+          {/* Logos - Mobile Only, Below Card */}
+          <div className="mt-6 flex lg:hidden items-center justify-center gap-4">
+            <Image
+              src={resolvedTheme === 'dark' ? "/urbantelwhite.png" : "/urbantel.png"}
+              alt="UrbanTel"
+              width={60}
+              height={60}
+              className="object-contain opacity-50"
+            />
+            <Image
+              src="/cverge.png"
+              alt="Cverge"
+              width={60}
+              height={60}
+              className="object-contain opacity-50"
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -169,6 +169,19 @@ export default function SubscribersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showDetailsModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDetailsModal]);
+
   useEffect(() => {
     // Only fetch when filters change, not on initial load
     if (agents.length > 0 && plans.length > 0) {
@@ -424,7 +437,8 @@ export default function SubscribersPage() {
           </div>
         )}
         
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-[#00A191] dark:bg-[#008c7a]">
               <tr>
@@ -498,6 +512,85 @@ export default function SubscribersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {subscribers.map((subscriber) => (
+            <div key={subscriber.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <div className="space-y-3">
+                {/* Name and Email */}
+                <div>
+                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                    {subscriber.first_name} {subscriber.last_name}
+                  </div>
+                  {subscriber.email && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{subscriber.email}</div>
+                  )}
+                </div>
+
+                {/* Contact Number */}
+                <div className="flex items-center gap-2 text-sm">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300">{subscriber.contact_number}</span>
+                </div>
+
+                {/* Address */}
+                <div className="flex items-start gap-2 text-sm">
+                  <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{subscriber.address}</span>
+                </div>
+
+                {/* Agent Info */}
+                <div className="flex items-center gap-2 text-sm">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <div>
+                    <span className="text-gray-700 dark:text-gray-300">{subscriber.agents?.name}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2 font-mono text-xs">
+                      {subscriber.agents?.referral_code}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Plan Info */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    {subscriber.plans?.name}
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">{subscriber.plans?.speed}</span>
+                    <span className="text-[#00A191] font-semibold">₱{subscriber.plans?.price}/mo</span>
+                  </div>
+                </div>
+
+                {/* Date Activated */}
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span>Activated: {new Date(subscriber.activated_at).toLocaleDateString()}</span>
+                </div>
+
+                {/* Action Button */}
+                <button
+                  onClick={() => handleViewDetails(subscriber)}
+                  className="w-full mt-2 px-4 py-2 bg-[#00A191] hover:bg-[#008c7a] text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
         {subscribers.length === 0 && !loading && (

@@ -125,33 +125,32 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
   try {
     const { id } = req.params;
 
-    // Verify subscriber exists
-    const { data: subscriber, error: subError } = await supabase
+    // Verify application exists (not just activated subscribers)
+    const { data: application, error: appError } = await supabase
       .from('applications')
-      .select('id, first_name, last_name, house_photo_url, government_id_url, id_selfie_url, signature_url')
+      .select('id, first_name, last_name, status, house_photo_url, government_id_url, id_selfie_url, signature_url')
       .eq('id', id)
-      .eq('status', 'Activated')
       .single();
 
-    if (subError || !subscriber) {
-      return res.status(404).json({ error: 'Subscriber not found' });
+    if (appError || !application) {
+      return res.status(404).json({ error: 'Application not found' });
     }
 
     // Collect all document URLs
     const documentUrls = [
-      { url: subscriber.house_photo_url, name: 'house_photo' },
-      { url: subscriber.government_id_url, name: 'government_id' },
-      { url: subscriber.id_selfie_url, name: 'id_selfie' },
-      { url: subscriber.signature_url, name: 'signature' }
+      { url: application.house_photo_url, name: 'house_photo' },
+      { url: application.government_id_url, name: 'government_id' },
+      { url: application.id_selfie_url, name: 'id_selfie' },
+      { url: application.signature_url, name: 'signature' }
     ].filter(doc => doc.url);
 
     if (documentUrls.length === 0) {
-      return res.status(404).json({ error: 'No documents found for this subscriber' });
+      return res.status(404).json({ error: 'No documents found for this application' });
     }
 
     // Set response headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="subscriber_${id}_documents.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="application_${id}_documents.zip"`);
 
     // Create ZIP archive
     const archive = archiver('zip', {
