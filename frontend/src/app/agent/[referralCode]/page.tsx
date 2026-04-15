@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
 
 interface Agent {
@@ -310,7 +311,7 @@ export default function AgentPortalPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 transition-colors duration-300">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#00A191' }}></div>
+          <LoadingSpinner size="lg" />
           <p className="mt-4 text-gray-900 dark:text-white">Loading agent portal...</p>
         </div>
       </div>

@@ -156,8 +156,8 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#00A191]">Profile</h1>
-        <p className="text-gray-600 mt-2">View and manage your profile information</p>
+        <h1 className="text-3xl font-bold text-[#00A191] dark:text-[#14B8A6]">Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">View and manage your profile information</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -219,17 +219,17 @@ export default function ProfilePage() {
             )}
             
             {/* Name */}
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
               {getDisplayName()}
             </h2>
             
             {/* Role Badge */}
-            <span className="inline-block px-3 py-1 text-sm font-medium text-[#00A191] bg-teal-100 rounded-full capitalize mb-4">
+            <span className="inline-block px-3 py-1 text-sm font-medium text-[#00A191] dark:text-[#14B8A6] bg-teal-100 dark:bg-teal-900/30 rounded-full capitalize mb-4">
               {user.role}
             </span>
             
             {/* Email */}
-            <p className="text-sm text-gray-600 mb-6">{user.email}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{user.email}</p>
             
             {/* Action Buttons */}
             <div className="w-full space-y-2">
@@ -258,40 +258,40 @@ export default function ProfilePage() {
 
         {/* Details Card */}
         <Card className="lg:col-span-2 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Details</h3>
           
           <div className="space-y-6">
             {/* Full Name */}
-            <div className="flex items-start gap-4 pb-6 border-b border-gray-100">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <User className="w-5 h-5 text-blue-600" />
+            <div className="flex items-start gap-4 pb-6 border-b border-gray-100 dark:border-gray-700">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-500 mb-1">Full Name</p>
-                <p className="text-base text-gray-900 dark:text-white">{user.full_name || 'Not set'}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Full Name</p>
+                <p className="text-base text-gray-900 dark:text-gray-100">{user.full_name || 'Not set'}</p>
               </div>
             </div>
 
             {/* Email */}
-            <div className="flex items-start gap-4 pb-6 border-b border-gray-100">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-5 h-5 text-green-600" />
+            <div className="flex items-start gap-4 pb-6 border-b border-gray-100 dark:border-gray-700">
+              <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-500 mb-1">Email Address</p>
-                <p className="text-base text-gray-900 dark:text-white">{user.email}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Email Address</p>
+                <p className="text-base text-gray-900 dark:text-gray-100">{user.email}</p>
               </div>
             </div>
 
             {/* Role */}
-            <div className="flex items-start gap-4 pb-6 border-b border-gray-100">
-              <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-teal-600" />
+            <div className="flex items-start gap-4 pb-6 border-b border-gray-100 dark:border-gray-700">
+              <div className="w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-500 mb-1">Role</p>
-                <p className="text-base text-gray-900 capitalize">{user.role}</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Role</p>
+                <p className="text-base text-gray-900 dark:text-gray-100 capitalize">{user.role}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {user.role === 'superadmin' 
                     ? 'Full system access with all administrative privileges'
                     : 'Standard administrative access'}
@@ -301,16 +301,16 @@ export default function ProfilePage() {
 
             {/* Account Status */}
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-500 mb-1">Account Status</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Account Status</p>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                  <p className="text-base text-gray-900 dark:text-white">Active</p>
+                  <p className="text-base text-gray-900 dark:text-gray-100">Active</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Member since {new Date(user.created_at || '').toLocaleDateString()}
                 </p>
               </div>

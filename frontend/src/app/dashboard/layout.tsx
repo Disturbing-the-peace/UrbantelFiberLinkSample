@@ -17,9 +17,7 @@ import {
   DollarSign, 
   BarChart3, 
   Trash2, 
-  Settings,
-  ChevronLeft,
-  ChevronRight
+  Settings
 } from 'lucide-react';
 
 export default function DashboardLayout({

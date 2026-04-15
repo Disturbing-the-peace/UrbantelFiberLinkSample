@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { analyticsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { dataCache } from '@/lib/cache';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 // Dynamically import the map component to avoid SSR issues
 const SubscriberMap = dynamic(() => import('@/components/SubscriberMap'), {
@@ -12,8 +13,8 @@ const SubscriberMap = dynamic(() => import('@/components/SubscriberMap'), {
   loading: () => (
     <div className="w-full h-[500px] bg-gray-100 rounded-lg flex items-center justify-center">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191] mb-2"></div>
-        <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+        <LoadingSpinner size="md" />
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Loading map...</p>
       </div>
     </div>
   ),
@@ -208,7 +209,7 @@ export default function AnalyticsPage() {
       <div className="p-4 sm:p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#00A191] mb-6">Analytics Dashboard</h1>
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191]"></div>
+          <LoadingSpinner size="md" />
           <p className="mt-2 text-gray-900 dark:text-white">Loading analytics...</p>
         </div>
       </div>

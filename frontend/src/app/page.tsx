@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -186,7 +187,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A191]"></div>
+          <LoadingSpinner size="lg" />
           <p className="mt-4 text-[#00A191]">Loading...</p>
         </div>
       </div>
@@ -194,7 +195,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
+    <div className="min-h-screen relative overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Header with Logo */}
       <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4">
         <Link href="/" className="flex items-center gap-2">
@@ -249,7 +250,7 @@ export default function Home() {
               <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-gray-900 dark:text-white">
                 Connect to the Future
               </h1>
-              <p className="text-xl md:text-2xl mb-6 text-gray-700 dark:text-gray-200">
+              <p className="text-xl md:text-2xl mb-6 text-gray-700 dark:text-gray-300">
                 High-Speed Fiber Internet for Your Home & Business
               </p>
               <p className="text-lg mb-8 text-gray-600 dark:text-gray-400">
@@ -295,7 +296,7 @@ export default function Home() {
             <div className="space-y-6">
               {/* Card 1 */}
               <div 
-                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-sm"
+                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm"
               >
                 <div className="flex items-start gap-4">
                   <div 
@@ -318,7 +319,7 @@ export default function Home() {
 
               {/* Card 2 */}
               <div 
-                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-sm"
+                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm"
               >
                 <div className="flex items-start gap-4">
                   <div 
@@ -341,7 +342,7 @@ export default function Home() {
 
               {/* Card 3 */}
               <div 
-                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-sm"
+                className="p-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm"
               >
                 <div className="flex items-start gap-4">
                   <div 

@@ -103,12 +103,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       console.log('AuthContext: Sign out successful');
       setUser(null);
-      router.push('/login');
+      router.push('/login?logout=success');
     } catch (error) {
       console.error('Error signing out:', error);
       // Still redirect to login even if there's an error
       setUser(null);
-      router.push('/login');
+      router.push('/login?logout=success');
     }
   };
 

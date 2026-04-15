@@ -14,7 +14,7 @@ export default function AgentLoginPage() {
   const { resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Animated S-curve with traveling pulse
+  // Animated S-curves with traveling pulses (4 lines, staggered)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -31,14 +31,30 @@ export default function AgentLoginPage() {
     window.addEventListener('resize', resizeCanvas);
 
     let animationId: number;
-    let pulseProgress = 0;
-    const pulseSpeed = 0.0015;
+    let currentLineIndex = Math.floor(Math.random() * 4); // Start with random line
+    let pulseProgress = -0.15; // Start slightly before the line
+    const pulseDuration = 3000; // 3 seconds to complete one line
+    let lineStartTime = Date.now();
 
-    // Generate S-curve path points
-    const generateSCurve = () => {
+    // 4 lines with different offsets
+    const lines = [
+      { yOffset: -80 },
+      { yOffset: -30 },
+      { yOffset: 30 },
+      { yOffset: 80 }
+    ];
+
+    // Function to get next random line (different from current)
+    const getNextRandomLine = (current: number): number => {
+      const availableLines = [0, 1, 2, 3].filter(i => i !== current);
+      return availableLines[Math.floor(Math.random() * availableLines.length)];
+    };
+
+    // Generate S-curve path points for a line
+    const generateSCurve = (yOffset: number) => {
       const points: { x: number; y: number }[] = [];
-      const centerY = canvas.height / 2;
-      const amplitude = Math.min(canvas.height * 0.15, 150);
+      const centerY = canvas.height / 2 + yOffset;
+      const amplitude = Math.min(canvas.height * 0.08, 80);
       const segments = 200;
 
       for (let i = 0; i <= segments; i++) {
@@ -51,90 +67,99 @@ export default function AgentLoginPage() {
       return points;
     };
 
-    const pathPoints = generateSCurve();
-
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the thin line path
-      ctx.beginPath();
-      ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-      
-      for (let i = 1; i < pathPoints.length; i++) {
-        ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
-      }
-      
-      ctx.strokeStyle = 'rgba(0, 161, 145, 0.3)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // Calculate pulse progress based on elapsed time
+      const elapsed = Date.now() - lineStartTime;
+      pulseProgress = -0.15 + (elapsed / pulseDuration) * 1.3; // -0.15 to 1.15
 
-      // Update pulse progress
-      pulseProgress += pulseSpeed;
-      if (pulseProgress > 1 + 0.1) {
-        pulseProgress = -0.1;
+      // Check if pulse completed this line
+      if (pulseProgress > 1.15) {
+        // Move to random next line (different from current)
+        currentLineIndex = getNextRandomLine(currentLineIndex);
+        pulseProgress = -0.15;
+        lineStartTime = Date.now();
       }
 
-      // Draw traveling pulse
-      if (pulseProgress >= 0 && pulseProgress <= 1) {
-        const index = Math.floor(pulseProgress * (pathPoints.length - 1));
-        const point = pathPoints[index];
+      // Draw each line
+      lines.forEach((line, lineIndex) => {
+        const pathPoints = generateSCurve(line.yOffset);
 
-        // Large outer glow
-        const outerGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 60);
-        outerGlow.addColorStop(0, 'rgba(0, 161, 145, 0.4)');
-        outerGlow.addColorStop(0.3, 'rgba(0, 161, 145, 0.2)');
-        outerGlow.addColorStop(0.6, 'rgba(0, 161, 145, 0.1)');
-        outerGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
-
+        // Draw the thin line path
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 60, 0, Math.PI * 2);
-        ctx.fillStyle = outerGlow;
-        ctx.fill();
+        ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+        
+        for (let i = 1; i < pathPoints.length; i++) {
+          ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+        }
+        
+        ctx.strokeStyle = 'rgba(0, 161, 145, 0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
 
-        // Medium glow
-        const mediumGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 30);
-        mediumGlow.addColorStop(0, 'rgba(0, 161, 145, 0.8)');
-        mediumGlow.addColorStop(0.5, 'rgba(0, 161, 145, 0.4)');
-        mediumGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
+        // Only draw pulse on the current active line
+        if (lineIndex === currentLineIndex && pulseProgress >= 0 && pulseProgress <= 1) {
+          const index = Math.floor(pulseProgress * (pathPoints.length - 1));
+          const point = pathPoints[index];
 
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 30, 0, Math.PI * 2);
-        ctx.fillStyle = mediumGlow;
-        ctx.fill();
-
-        // Bright core
-        const coreGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 12);
-        coreGlow.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        coreGlow.addColorStop(0.3, 'rgba(0, 161, 145, 1)');
-        coreGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
-
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 12, 0, Math.PI * 2);
-        ctx.fillStyle = coreGlow;
-        ctx.shadowColor = '#00A191';
-        ctx.shadowBlur = 20;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Motion blur trail
-        for (let i = 1; i <= 5; i++) {
-          const trailIndex = Math.max(0, index - i * 3);
-          const trailPoint = pathPoints[trailIndex];
-          const trailOpacity = 0.3 * (1 - i / 5);
-
-          const trailGlow = ctx.createRadialGradient(
-            trailPoint.x, trailPoint.y, 0,
-            trailPoint.x, trailPoint.y, 15
-          );
-          trailGlow.addColorStop(0, `rgba(0, 161, 145, ${trailOpacity})`);
-          trailGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
+          // Large outer glow
+          const outerGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 50);
+          outerGlow.addColorStop(0, 'rgba(0, 161, 145, 0.5)');
+          outerGlow.addColorStop(0.3, 'rgba(0, 161, 145, 0.25)');
+          outerGlow.addColorStop(0.6, 'rgba(0, 161, 145, 0.1)');
+          outerGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
 
           ctx.beginPath();
-          ctx.arc(trailPoint.x, trailPoint.y, 15, 0, Math.PI * 2);
-          ctx.fillStyle = trailGlow;
+          ctx.arc(point.x, point.y, 50, 0, Math.PI * 2);
+          ctx.fillStyle = outerGlow;
           ctx.fill();
+
+          // Medium glow
+          const mediumGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 25);
+          mediumGlow.addColorStop(0, 'rgba(0, 161, 145, 0.9)');
+          mediumGlow.addColorStop(0.5, 'rgba(0, 161, 145, 0.5)');
+          mediumGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
+
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 25, 0, Math.PI * 2);
+          ctx.fillStyle = mediumGlow;
+          ctx.fill();
+
+          // Bright core
+          const coreGlow = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, 10);
+          coreGlow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+          coreGlow.addColorStop(0.3, 'rgba(0, 161, 145, 1)');
+          coreGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
+
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+          ctx.fillStyle = coreGlow;
+          ctx.shadowColor = '#00A191';
+          ctx.shadowBlur = 15;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Draw motion blur trail
+          for (let i = 1; i <= 4; i++) {
+            const trailIndex = Math.max(0, index - i * 4);
+            const trailPoint = pathPoints[trailIndex];
+            const trailOpacity = 0.4 * (1 - i / 4);
+
+            const trailGlow = ctx.createRadialGradient(
+              trailPoint.x, trailPoint.y, 0,
+              trailPoint.x, trailPoint.y, 12
+            );
+            trailGlow.addColorStop(0, `rgba(0, 161, 145, ${trailOpacity})`);
+            trailGlow.addColorStop(1, 'rgba(0, 161, 145, 0)');
+
+            ctx.beginPath();
+            ctx.arc(trailPoint.x, trailPoint.y, 12, 0, Math.PI * 2);
+            ctx.fillStyle = trailGlow;
+            ctx.fill();
+          }
         }
-      }
+      });
 
       animationId = requestAnimationFrame(animate);
     };
@@ -187,12 +212,12 @@ export default function AgentLoginPage() {
         <ThemeToggle />
       </div>
 
-      {/* Animated S-Curve with Pulse */}
+      {/* Animated S-Curves with Pulses */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ 
-          opacity: resolvedTheme === 'dark' ? 1 : 0.3,
+          opacity: 1,
           zIndex: 1
         }}
       />
@@ -218,8 +243,8 @@ export default function AgentLoginPage() {
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
-          {/* Logos */}
-          <div className="mb-8 flex justify-center gap-6">
+          {/* Logos - Mobile Only */}
+          <div className="mb-8 flex justify-center gap-6 md:hidden">
             <Image
               src={resolvedTheme === 'dark' ? "/urbantelwhite.png" : "/urbantel.png"}
               alt="UrbanTel"
@@ -318,8 +343,8 @@ export default function AgentLoginPage() {
         </div>
       </div>
 
-      {/* Footer Logos */}
-      <div className="absolute bottom-8 right-8 z-10 flex items-center gap-6">
+      {/* Footer Logos - Desktop Only */}
+      <div className="hidden md:flex absolute bottom-8 right-8 z-10 items-center gap-6">
         <Image
           src={resolvedTheme === 'dark' ? "/urbantelwhite.png" : "/urbantel.png"}
           alt="UrbanTel"

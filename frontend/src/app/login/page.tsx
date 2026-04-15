@@ -4,8 +4,10 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useToast } from '@/contexts/ToastContext';
 import { signIn, verify2FA, listMFAFactors, getAuthErrorMessage } from '@/lib/auth';
 import ThemeToggle from '@/components/ThemeToggle';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
 
 function LoginPageContent() {
@@ -21,9 +23,12 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const { user, refreshUser } = useAuth();
   const { resolvedTheme } = useTheme();
+  const toast = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const toastShownRef = useRef(false);
   
   const redirectPath = searchParams.get('redirect') || '/dashboard';
+  const logoutSuccess = searchParams.get('logout') === 'success';
 
   useEffect(() => {
     console.log('Login page useEffect - user:', user, 'redirectPath:', redirectPath);
@@ -33,6 +38,18 @@ function LoginPageContent() {
       router.push(redirectPath);
     }
   }, [user, router, redirectPath]);
+
+  // Show logout success toast
+  useEffect(() => {
+    if (logoutSuccess && !user && !toastShownRef.current) {
+      toastShownRef.current = true;
+      toast.success('You have been successfully logged out');
+      // Clean up the URL parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('logout');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [logoutSuccess, user, toast]);
 
   // Animated S-curves with traveling pulses (4 lines, staggered)
   useEffect(() => {
@@ -287,7 +304,7 @@ function LoginPageContent() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
+    <div className="min-h-screen flex relative overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Animated S-Curve with Pulse */}
       <canvas
         ref={canvasRef}
@@ -546,8 +563,8 @@ function LoginPageContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#0a0a0a]">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191]"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <LoadingSpinner size="md" />
       </div>
     }>
       <LoginPageContent />

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { subscribersApi, agentsApi, plansApi, exportApi } from '@/lib/api';
 import { Agent, Plan } from '@/types';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import 'leaflet/dist/leaflet.css';
 
 // Dynamically import map components to avoid SSR issues
@@ -99,8 +100,8 @@ function SubscriberMapView({ subscriber }: { subscriber: Subscriber }) {
     return (
       <div className="w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191] mb-2"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+          <LoadingSpinner size="md" />
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Loading map...</p>
         </div>
       </div>
     );
@@ -431,8 +432,8 @@ export default function SubscribersPage() {
         {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Loading subscribers...</div>
+              <LoadingSpinner size="md" />
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading subscribers...</div>
             </div>
           </div>
         )}

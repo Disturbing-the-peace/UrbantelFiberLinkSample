@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Agent } from '@/types';
 import { agentsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -289,8 +290,8 @@ export default function AgentsPage() {
         {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191] mb-2"></div>
-              <div className="text-sm text-gray-900 dark:text-white">Loading agents...</div>
+              <LoadingSpinner size="md" />
+              <div className="text-sm text-gray-900 dark:text-white mt-2">Loading agents...</div>
             </div>
           </div>
         )}

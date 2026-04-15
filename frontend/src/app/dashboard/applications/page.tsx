@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Application, Agent } from '@/types';
 import { applicationsApi, agentsApi, exportApi } from '@/lib/api';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface ApplicationWithRelations extends Application {
   agents?: Agent;
@@ -304,8 +305,8 @@ export default function ApplicationsPage() {
         {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191] mb-2"></div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Loading applications...</div>
+              <LoadingSpinner size="md" />
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading applications...</div>
             </div>
           </div>
         )}
@@ -1018,7 +1019,7 @@ function DocumentThumbnail({ label, url, onClick }: DocumentThumbnailProps) {
         className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden"
       >
         {loading ? (
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00A191]"></div>
+          <LoadingSpinner size="md" />
         ) : error ? (
           <div className="text-red-500 text-xs text-center p-2">Failed to load</div>
         ) : (
@@ -1098,7 +1099,7 @@ function ImageViewerModal({ imageUrl, onClose }: ImageViewerModalProps) {
         </button>
         {loading ? (
           <div className="flex items-center justify-center p-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00A191]"></div>
+            <LoadingSpinner size="lg" />
           </div>
         ) : (
           <img
