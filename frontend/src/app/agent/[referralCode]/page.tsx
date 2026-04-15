@@ -7,7 +7,22 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapModal to avoid SSR issues with Leaflet
+// @ts-ignore - Dynamic import type resolution issue
+const MapModal = dynamic(
+  // @ts-ignore
+  () => import('@/components/MapModal'),
+  { ssr: false }
+) as React.ComponentType<{
+  address: string;
+  name: string;
+  lat?: number;
+  lng?: number;
+  onClose: () => void;
+}>;
 
 interface Agent {
   id: string;
@@ -82,11 +97,23 @@ export default function AgentPortalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'applicants' | 'subscribers' | 'commissions'>('applicants');
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ address: string; lat?: number; lng?: number; name: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     fetchAgentData();
   }, [referralCode]);
+
+  const handleAddressClick = (address: string, name: string, lat?: number, lng?: number) => {
+    setSelectedLocation({ address, name, lat, lng });
+    setShowMapModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowMapModal(false);
+    setSelectedLocation(null);
+  };
 
   // Animated S-curve with traveling pulse
   useEffect(() => {
@@ -536,8 +563,17 @@ export default function AgentPortalPage() {
                             {application.plans?.speed} - ₱{application.plans?.price}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
-                          {application.address}
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleAddressClick(
+                              application.address,
+                              `${application.first_name} ${application.last_name}`
+                            )}
+                            className="text-sm text-[#00A191] dark:text-[#14B8A6] hover:underline flex items-center gap-1 max-w-xs truncate"
+                          >
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{application.address}</span>
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${getApplicationStatusColor(application.status)}`}>
@@ -603,8 +639,17 @@ export default function AgentPortalPage() {
                             {subscriber.plans?.speed} - ₱{subscriber.plans?.price}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                          {subscriber.address}
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => handleAddressClick(
+                              subscriber.address,
+                              `${subscriber.first_name} ${subscriber.last_name}`
+                            )}
+                            className="text-sm text-[#00A191] dark:text-[#14B8A6] hover:underline flex items-center gap-1"
+                          >
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span>{subscriber.address}</span>
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                           {new Date(subscriber.activated_at).toLocaleDateString()}
@@ -684,6 +729,17 @@ export default function AgentPortalPage() {
           </div>
         )}
       </div>
+
+      {/* Map Modal */}
+      {showMapModal && selectedLocation && (
+        <MapModal
+          address={selectedLocation.address}
+          name={selectedLocation.name}
+          lat={selectedLocation.lat}
+          lng={selectedLocation.lng}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
