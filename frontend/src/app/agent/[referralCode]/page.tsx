@@ -6,6 +6,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 interface Agent {
   id: string;
@@ -356,6 +358,13 @@ export default function AgentPortalPage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Link
+                href="/agent"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Back to Agent Portal"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </Link>
               <Image
                 src="/lobosw.png"
                 alt="UrbanTel FiberLink"
