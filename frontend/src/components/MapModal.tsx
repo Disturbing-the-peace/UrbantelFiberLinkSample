@@ -97,7 +97,7 @@ export default function MapModal({ address, name, lat, lng, onClose }: MapModalP
         {/* Map Container */}
         <div 
           ref={mapContainerRef}
-          className="w-full h-[500px]"
+          className="w-full h-[400px] md:h-[500px]"
         />
 
         {/* Footer */}

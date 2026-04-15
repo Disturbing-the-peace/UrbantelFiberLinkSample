@@ -393,7 +393,7 @@ export default function AgentPortalPage() {
                 <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </Link>
               <Image
-                src="/lobosw.png"
+                src={resolvedTheme === 'dark' ? "/lobosw.png" : "/lobost.png"}
                 alt="UrbanTel FiberLink"
                 width={50}
                 height={50}
