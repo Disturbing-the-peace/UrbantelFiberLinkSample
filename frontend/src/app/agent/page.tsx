@@ -249,7 +249,7 @@ export default function AgentLoginPage() {
 
   const getReferralUrl = () => {
     if (typeof window !== 'undefined') {
-      return `${window.location.origin}/agent/${referralCode.trim()}`;
+      return `${window.location.origin}/apply?ref=${referralCode.trim()}`;
     }
     return '';
   };
@@ -446,7 +446,7 @@ export default function AgentLoginPage() {
                 Referral QR Code
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Scan this code to access your referral link
+                Share this code for customers to apply with your referral
               </p>
 
               {/* QR Code */}
