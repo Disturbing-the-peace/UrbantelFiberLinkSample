@@ -196,19 +196,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
-      {/* Header with Logo */}
-      <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/lobosw.png"
-            alt="UrbanTel FiberLink"
-            width={40}
-            height={40}
-            className="object-contain"
-          />
-          <h1 className="text-xl md:text-2xl font-bold text-[#00A191]">UrbanTel FiberLink</h1>
-        </Link>
-        
+      {/* Header with Theme Toggle */}
+      <header className="absolute top-0 left-0 right-0 z-50 flex items-center justify-end px-4 md:px-8 py-4">
         {/* Theme Toggle */}
         <ThemeToggle variant="subtle" />
       </header>

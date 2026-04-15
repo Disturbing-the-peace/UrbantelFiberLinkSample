@@ -5,14 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import Image from 'next/image';
+import { QRCodeSVG } from 'qrcode.react';
+import { QrCode, X, Download } from 'lucide-react';
 
 export default function AgentLoginPage() {
   const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showQRModal, setShowQRModal] = useState(false);
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   // Animated S-curves with traveling pulses (4 lines, staggered)
   useEffect(() => {
@@ -205,6 +209,51 @@ export default function AgentLoginPage() {
     }
   };
 
+  const handleShowQR = () => {
+    if (!referralCode.trim()) {
+      setError('Please enter your referral code first');
+      return;
+    }
+    setError('');
+    setShowQRModal(true);
+  };
+
+  const handleDownloadQR = () => {
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new window.Image();
+
+    canvas.width = 512;
+    canvas.height = 512;
+
+    img.onload = () => {
+      ctx?.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `referral-qr-${referralCode}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const getReferralUrl = () => {
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/agent/${referralCode.trim()}`;
+    }
+    return '';
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Theme Toggle Button */}
@@ -303,24 +352,36 @@ export default function AgentLoginPage() {
                 </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 px-4 text-white font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                style={{ backgroundColor: '#00A191' }}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Verifying...
-                  </span>
-                ) : (
-                  'View My Portal'
-                )}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-4 px-4 text-white font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  style={{ backgroundColor: '#00A191' }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Verifying...
+                    </span>
+                  ) : (
+                    'View My Portal'
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleShowQR}
+                  disabled={loading}
+                  className="py-4 px-4 text-[#00A191] dark:text-[#14B8A6] font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border-2 border-[#00A191] dark:border-[#14B8A6] bg-white/50 dark:bg-gray-800/50"
+                  title="Show QR Code"
+                >
+                  <QrCode className="w-6 h-6" />
+                </button>
+              </div>
             </form>
 
             <div className="mt-8 text-center">
@@ -360,6 +421,77 @@ export default function AgentLoginPage() {
           className="object-contain opacity-80 hover:opacity-100 transition-opacity"
         />
       </div>
+
+      {/* QR Code Modal */}
+      {showQRModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowQRModal(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowQRModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+
+            {/* Modal Content */}
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+                Referral QR Code
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Scan this code to access your referral link
+              </p>
+
+              {/* QR Code */}
+              <div 
+                ref={qrRef}
+                className="bg-white p-6 rounded-xl inline-block mb-6"
+              >
+                <QRCodeSVG
+                  value={getReferralUrl()}
+                  size={256}
+                  level="H"
+                  fgColor="#00A191"
+                  bgColor="#ffffff"
+                  includeMargin={true}
+                />
+              </div>
+
+              {/* Referral Code Display */}
+              <div className="mb-6">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Referral Code</p>
+                <p className="text-2xl font-mono font-bold text-[#00A191] dark:text-[#14B8A6]">
+                  {referralCode}
+                </p>
+              </div>
+
+              {/* URL Display */}
+              <div className="mb-6 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Referral URL</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 break-all">
+                  {getReferralUrl()}
+                </p>
+              </div>
+
+              {/* Download Button */}
+              <button
+                onClick={handleDownloadQR}
+                className="w-full py-3 px-4 bg-[#00A191] text-white font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <Download className="w-5 h-5" />
+                Download QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
