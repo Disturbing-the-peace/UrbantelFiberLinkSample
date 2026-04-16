@@ -249,4 +249,82 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
   }
 });
 
+/**
+ * DELETE /api/users/:id/permanent
+ * Permanently delete a user (superadmin only)
+ * Removes user from both Auth and database
+ */
+router.delete('/:id/permanent', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Ensure id is a string
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    // Prevent superadmin from deleting themselves
+    if (req.user?.id === id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    // Check if user exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('users')
+      .select('id, email, full_name')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete from database first
+    const { error: dbError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+
+    if (dbError) {
+      console.error('Error deleting user from database:', dbError);
+      return res.status(500).json({ error: 'Failed to delete user from database' });
+    }
+
+    // Delete from Supabase Auth
+    const { error: authError } = await supabase.auth.admin.deleteUser(id as string);
+
+    if (authError) {
+      console.error('Error deleting user from auth:', authError);
+      // User is already deleted from database, log but don't fail
+      console.warn('User deleted from database but auth deletion failed:', authError.message);
+    }
+
+    // Log to audit
+    await supabase.from('audit_log').insert({
+      action: 'USER_DELETE',
+      entity_type: 'user',
+      entity_id: id,
+      performed_by: req.user!.id,
+      metadata: {
+        deleted_user: {
+          email: existing.email,
+          full_name: existing.full_name,
+        },
+      },
+    });
+
+    res.json({ 
+      message: 'User permanently deleted successfully',
+      deleted_user: {
+        id: existing.id,
+        email: existing.email,
+        full_name: existing.full_name,
+      }
+    });
+  } catch (error) {
+    console.error('Error in DELETE /api/users/:id/permanent:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

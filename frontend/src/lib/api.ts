@@ -428,7 +428,10 @@ export const usersApi = {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
-  delete: (id: string) => apiRequest<any>(`/api/users/${id}`, {
+  deactivate: (id: string) => apiRequest<any>(`/api/users/${id}`, {
+    method: 'DELETE',
+  }),
+  deletePermanent: (id: string) => apiRequest<any>(`/api/users/${id}/permanent`, {
     method: 'DELETE',
   }),
 };

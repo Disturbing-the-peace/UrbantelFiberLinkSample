@@ -96,19 +96,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       console.log('AuthContext: Signing out...');
+      
+      // Clear user state immediately
+      setUser(null);
+      
+      // Sign out from Supabase
       const { error } = await authSignOut();
       if (error) {
         console.error('Sign out error:', error);
-        throw new Error(error.message);
       }
-      console.log('AuthContext: Sign out successful');
-      setUser(null);
+      
+      console.log('AuthContext: Sign out successful, redirecting...');
+      
+      // Force redirect immediately
       router.push('/login?logout=success');
+      
+      // Force page reload to clear all state
+      setTimeout(() => {
+        window.location.href = '/login?logout=success';
+      }, 100);
     } catch (error) {
       console.error('Error signing out:', error);
-      // Still redirect to login even if there's an error
+      // Still clear state and redirect even if there's an error
       setUser(null);
       router.push('/login?logout=success');
+      setTimeout(() => {
+        window.location.href = '/login?logout=success';
+      }, 100);
     }
   };
 
