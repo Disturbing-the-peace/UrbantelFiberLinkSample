@@ -352,7 +352,7 @@ export default function AgentLoginPage() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="submit"
                   disabled={loading}
@@ -376,10 +376,10 @@ export default function AgentLoginPage() {
                   type="button"
                   onClick={handleShowQR}
                   disabled={loading}
-                  className="py-4 px-4 text-[#00A191] dark:text-[#14B8A6] font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border-2 border-[#00A191] dark:border-[#14B8A6] bg-white/50 dark:bg-gray-800/50"
-                  title="Show QR Code"
+                  className="flex-1 py-4 px-4 text-[#00A191] dark:text-[#14B8A6] font-semibold rounded-xl transition-all transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border-2 border-[#00A191] dark:border-[#14B8A6] bg-white/50 dark:bg-gray-800/50 flex items-center justify-center gap-2"
                 >
-                  <QrCode className="w-6 h-6" />
+                  <QrCode className="w-5 h-5" />
+                  <span>Show QR Code</span>
                 </button>
               </div>
             </form>
