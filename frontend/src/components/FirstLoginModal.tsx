@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { authApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
-import { Eye, EyeOff, Lock, Upload, X } from 'lucide-react';
-import ImageUpload from './ImageUpload';
+import { useAuth } from '@/contexts/AuthContext';
+import { getSupabaseClient } from '@/lib/supabase';
+import { Eye, EyeOff, Lock, Upload, X, Camera } from 'lucide-react';
 
 interface FirstLoginModalProps {
   onComplete: () => void;
@@ -13,12 +14,40 @@ interface FirstLoginModalProps {
 export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const toast = useToast();
+  const { user } = useAuth();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setProfilePicture(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +69,34 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
 
     try {
       setLoading(true);
+      let profilePictureUrl: string | undefined;
+
+      // Upload profile picture if provided
+      if (profilePicture && user?.id) {
+        setUploading(true);
+        const supabase = getSupabaseClient();
+        
+        const fileExt = profilePicture.name.split('.').pop();
+        const fileName = `${user.id}/profile.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(fileName, profilePicture, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('profile-pictures')
+          .getPublicUrl(fileName);
+
+        profilePictureUrl = publicUrl;
+        setUploading(false);
+      }
+
       await authApi.completeFirstLogin({
         new_password: newPassword,
-        profile_picture_url: profilePicture || undefined,
+        profile_picture_url: profilePictureUrl,
       });
       
       toast.success('Password updated successfully! Welcome to UrbanTel FiberLink.');
@@ -51,12 +105,13 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
       toast.error(error.message || 'Failed to update password');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
-  const handleSkipProfilePicture = () => {
-    setShowImageUpload(false);
+  const handleRemovePhoto = () => {
     setProfilePicture(null);
+    setPreviewUrl(null);
   };
 
   return (
@@ -133,51 +188,47 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
               Profile Picture (Optional)
             </label>
             
-            {!showImageUpload && !profilePicture ? (
-              <button
-                type="button"
-                onClick={() => setShowImageUpload(true)}
-                className="w-full px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-teal-500 dark:hover:border-teal-500 transition-colors flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400"
-              >
-                <Upload className="w-5 h-5" />
-                <span>Upload Profile Picture</span>
-              </button>
-            ) : showImageUpload ? (
-              <div className="space-y-3">
-                <ImageUpload
-                  onUploadComplete={(url) => {
-                    setProfilePicture(url);
-                    setShowImageUpload(false);
-                    toast.success('Profile picture uploaded successfully');
-                  }}
-                  folder="profile-pictures"
-                  maxSizeMB={5}
-                />
-                <button
-                  type="button"
-                  onClick={handleSkipProfilePicture}
-                  className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+            {!previewUrl ? (
+              <div className="flex flex-col items-center">
+                <label
+                  htmlFor="profile-picture-input"
+                  className="w-full px-4 py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-teal-500 dark:hover:border-teal-500 transition-colors cursor-pointer flex flex-col items-center justify-center gap-3 text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400"
                 >
-                  Skip for now
-                </button>
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <Camera className="w-8 h-8" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium">Click to upload profile picture</p>
+                    <p className="text-xs mt-1">PNG, JPG up to 5MB</p>
+                  </div>
+                </label>
+                <input
+                  id="profile-picture-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
             ) : (
-              <div className="relative">
-                <img
-                  src={profilePicture}
-                  alt="Profile"
-                  className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-teal-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfilePicture(null);
-                    setShowImageUpload(false);
-                  }}
-                  className="absolute top-0 right-1/2 translate-x-16 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <img
+                    src={previewUrl}
+                    alt="Profile preview"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-teal-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Looking good! 👍
+                </p>
               </div>
             )}
           </div>
@@ -186,10 +237,15 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
           <div className="pt-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="w-full px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {uploading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Uploading photo...</span>
+                </>
+              ) : loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Setting up...</span>
