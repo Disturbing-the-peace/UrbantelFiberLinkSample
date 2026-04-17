@@ -293,6 +293,14 @@ export const agentsApi = {
     dataCache.clear('agents:all');
     return result;
   },
+  deletePermanent: async (id: string) => {
+    const result = await apiRequest<any>(`/api/agents/${id}/permanent`, {
+      method: 'DELETE',
+    });
+    // Invalidate cache after deleting
+    dataCache.clear('agents:all');
+    return result;
+  },
 };
 
 /**

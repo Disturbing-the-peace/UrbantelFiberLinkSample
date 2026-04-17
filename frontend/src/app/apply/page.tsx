@@ -663,7 +663,7 @@ function ApplicationFormContent() {
                 {/* Level 1: Choose Category (Residential/Business) */}
                 {!selectedCategory && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 text-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-6">
                       Pilia ang Tipo sa Plano
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -786,8 +786,8 @@ function ApplicationFormContent() {
                             >
                               <div className="text-center">
                                 <div className="text-4xl mb-3">{typeIcon}</div>
-                                <h4 className="text-xl font-bold text-gray-900 mb-2">{type}</h4>
-                                <p className="text-sm text-gray-600">{plansByType[type].length} ka plano</p>
+                                <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{type}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{plansByType[type].length} ka plano</p>
                               </div>
                             </button>
                           );

@@ -295,4 +295,68 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
   }
 });
 
+/**
+ * DELETE /api/agents/:id/permanent
+ * Permanently delete an agent (superadmin only)
+ * WARNING: This action cannot be undone
+ */
+router.delete('/:id/permanent', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if agent exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('agents')
+      .select('id, name, referral_code')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
+      return res.status(404).json({ error: 'Agent not found' });
+    }
+
+    // Check if agent has any applications
+    const { data: applications, error: appsError } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('agent_id', id)
+      .limit(1);
+
+    if (appsError) {
+      console.error('Error checking applications:', appsError);
+      return res.status(500).json({ error: 'Failed to check agent applications' });
+    }
+
+    if (applications && applications.length > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete agent with existing applications',
+        message: 'This agent has applications in the system. Please deactivate instead of deleting.'
+      });
+    }
+
+    // Permanently delete the agent
+    const { error: deleteError } = await supabase
+      .from('agents')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('Error permanently deleting agent:', deleteError);
+      return res.status(500).json({ error: 'Failed to permanently delete agent' });
+    }
+
+    res.json({ 
+      message: 'Agent permanently deleted successfully',
+      deleted: {
+        id: existing.id,
+        name: existing.name,
+        referral_code: existing.referral_code
+      }
+    });
+  } catch (error) {
+    console.error('Error in DELETE /api/agents/:id/permanent:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
