@@ -2,14 +2,17 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useToast } from '@/contexts/ToastContext';
+import { authApi } from '@/lib/api';
 import { Card } from '@/components/ui/card';
-import { User, Bell, Shield, Save, X, Check, Palette, Sun, Moon, Clock } from 'lucide-react';
+import { User, Bell, Shield, Save, X, Check, Palette, Sun, Moon, Clock, Play } from 'lucide-react';
 import { useState } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'appearance'>('profile');
   
   // Profile state
@@ -28,6 +31,24 @@ export default function SettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [applicationNotifications, setApplicationNotifications] = useState(true);
   const [commissionNotifications, setCommissionNotifications] = useState(true);
+
+  // Onboarding tour
+  const [tourLoading, setTourLoading] = useState(false);
+
+  const handleReplayTour = async () => {
+    try {
+      setTourLoading(true);
+      await authApi.resetOnboarding();
+      toast.success('Onboarding tour reset! Refresh the page to start the tour.');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reset onboarding tour');
+    } finally {
+      setTourLoading(false);
+    }
+  };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,6 +457,31 @@ export default function SettingsPage() {
               <p className="text-sm text-teal-800 dark:text-teal-200">
                 <strong>Current theme:</strong> {theme === 'auto' ? 'Auto (switches at 6 AM and 6 PM)' : theme.charAt(0).toUpperCase() + theme.slice(1)}
               </p>
+            </div>
+
+            {/* Onboarding Tour */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Help & Onboarding</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Replay the onboarding tour to learn about the dashboard features again.
+              </p>
+              <button
+                onClick={handleReplayTour}
+                disabled={tourLoading}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {tourLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    <span>Replay Onboarding Tour</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </Card>

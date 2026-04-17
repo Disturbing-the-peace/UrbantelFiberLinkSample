@@ -15,6 +15,7 @@ import applicationsRoutes from './routes/applications.routes';
 import auditLogRoutes from './routes/auditLog.routes';
 import usersRoutes from './routes/users.routes';
 import documentsRoutes from './routes/documents.routes';
+import eventsRoutes from './routes/events.routes';
 import { dataPurgeService } from './services/dataPurge.service';
 
 dotenv.config();
@@ -55,6 +56,7 @@ app.use('/api/applications', applicationsRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/events', eventsRoutes);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);

@@ -614,3 +614,60 @@ export const api = {
     method: 'DELETE',
   }),
 };
+
+/**
+ * Events API methods
+ */
+export const eventsApi = {
+  getAll: () => apiRequest<any[]>('/api/events'),
+  getByRange: (start: string, end: string) => 
+    apiRequest<any[]>(`/api/events/range?start=${start}&end=${end}`),
+  getById: (id: string) => apiRequest<any>(`/api/events/${id}`),
+  create: (data: {
+    title: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    all_day?: boolean;
+    color?: string;
+  }) => apiRequest<any>('/api/events', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: {
+    title?: string;
+    description?: string;
+    start_date?: string;
+    end_date?: string;
+    all_day?: boolean;
+    color?: string;
+  }) => apiRequest<any>(`/api/events/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id: string) => apiRequest<any>(`/api/events/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+/**
+ * Auth API methods for first login and onboarding
+ */
+export const authApi = {
+  completeFirstLogin: (data: {
+    new_password: string;
+    profile_picture_url?: string;
+  }) => apiRequest<any>('/api/auth/complete-first-login', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  completeOnboarding: () => apiRequest<any>('/api/auth/complete-onboarding', {
+    method: 'POST',
+  }),
+  resetOnboarding: () => apiRequest<any>('/api/auth/reset-onboarding', {
+    method: 'POST',
+  }),
+  updateLastLogin: () => apiRequest<any>('/api/auth/update-last-login', {
+    method: 'POST',
+  }),
+};

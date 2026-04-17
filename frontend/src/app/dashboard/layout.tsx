@@ -4,9 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import FirstLoginModal from '@/components/FirstLoginModal';
+import OnboardingTour from '@/components/OnboardingTour';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
   Menu, 
@@ -17,7 +19,8 @@ import {
   DollarSign, 
   BarChart3, 
   Trash2, 
-  Settings
+  Settings,
+  Calendar
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -25,10 +28,35 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const pathname = usePathname();
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showFirstLogin, setShowFirstLogin] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if user needs first login or onboarding
+  useEffect(() => {
+    if (user) {
+      if (user.is_first_login) {
+        setShowFirstLogin(true);
+      } else if (!user.onboarding_completed) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user]);
+
+  const handleFirstLoginComplete = async () => {
+    setShowFirstLogin(false);
+    await refreshUser();
+    // After first login, show onboarding
+    setShowOnboarding(true);
+  };
+
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    await refreshUser();
+  };
 
   const navigation = [
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
@@ -36,6 +64,7 @@ export default function DashboardLayout({
     { name: 'Applications', href: '/dashboard/applications', icon: FileText },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: UserCheck },
     { name: 'Commissions', href: '/dashboard/commissions', icon: DollarSign },
+    { name: 'Events', href: '/dashboard/events', icon: Calendar },
   ];
 
   const adminNavigation = user?.role === 'superadmin' ? [
@@ -47,6 +76,17 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
+      {/* First Login Modal */}
+      {showFirstLogin && <FirstLoginModal onComplete={handleFirstLoginComplete} />}
+
+      {/* Onboarding Tour */}
+      {showOnboarding && !showFirstLogin && (
+        <OnboardingTour 
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingComplete}
+        />
+      )}
+
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex transition-colors duration-300">
         {/* Sidebar - Desktop */}
         <aside 

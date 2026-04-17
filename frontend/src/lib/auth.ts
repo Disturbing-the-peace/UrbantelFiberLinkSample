@@ -15,6 +15,10 @@ export interface User {
   requires2FA: boolean;
   profile_picture_url?: string;
   full_name?: string;
+  is_first_login?: boolean;
+  onboarding_completed?: boolean;
+  password_changed_at?: string;
+  last_login_at?: string;
   created_at?: string;
 }
 

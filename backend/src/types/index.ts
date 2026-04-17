@@ -8,6 +8,10 @@ export interface User {
   full_name: string;
   is_active: boolean;
   profile_picture_url?: string;
+  is_first_login: boolean;
+  onboarding_completed: boolean;
+  password_changed_at?: string;
+  last_login_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -85,4 +89,17 @@ export interface AuditLog {
   performed_by: string;
   performed_at: string;
   metadata?: Record<string, any>;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  all_day: boolean;
+  color: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
 }

@@ -7,6 +7,11 @@ export interface User {
   role: 'superadmin' | 'admin';
   full_name: string;
   is_active: boolean;
+  profile_picture_url?: string;
+  is_first_login?: boolean;
+  onboarding_completed?: boolean;
+  password_changed_at?: string;
+  last_login_at?: string;
   created_at: string;
   updated_at: string;
 }
