@@ -1,4 +1,4 @@
-import { getSupabaseClient, resetSupabaseClient, getCurrentSession } from './supabase';
+import { getSupabaseClient, getCurrentSession } from './supabase';
 import { cachedFetch, dataCache, getMillisecondsUntilMidnight } from './cache';
 import { markRequestSuccess, resetIfStale } from './connectionHealth';
 
@@ -61,31 +61,39 @@ export async function getAccessToken(): Promise<string | null> {
       sessionPromise,
       timeoutPromise
     ]).catch((err) => {
-      console.error('Session fetch timed out or failed:', err);
-      // Reset client on timeout
-      if (consecutiveFailures >= MAX_FAILURES_BEFORE_RESET) {
-        console.log('Too many failures, resetting Supabase client...');
-        resetSupabaseClient();
-        consecutiveFailures = 0;
-      } else {
-        consecutiveFailures++;
+      // Suppress refresh token errors (expected after logout)
+      if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
+        console.log('getAccessToken: No valid refresh token (expected after logout)');
+        return { data: { session: null }, error: null };
       }
+      console.error('Session fetch timed out or failed:', err);
+      consecutiveFailures++;
       return { data: { session: null }, error: err };
     }) as any;
     
     if (error) {
+      // Suppress refresh token errors
+      if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
+        console.log('getAccessToken: Invalid refresh token (expected after logout)');
+        return null;
+      }
       console.error('Error getting session:', error);
       return null;
     }
     
     if (!freshSession) {
-      console.warn('No session found');
+      console.log('getAccessToken: No session found');
       return null;
     }
     
     consecutiveFailures = 0; // Reset on success
     return freshSession.access_token;
   } catch (error: any) {
+    // Suppress refresh token errors
+    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+      console.log('getAccessToken: Invalid token (expected after logout)');
+      return null;
+    }
     console.error('Error in getAccessToken:', error);
     consecutiveFailures++;
     return null;
@@ -111,27 +119,29 @@ export async function refreshAccessToken(): Promise<string | null> {
       refreshPromise,
       timeoutPromise
     ]).catch((err) => {
-      console.error('Refresh timed out, resetting client...');
-      resetSupabaseClient();
+      // Suppress refresh token errors (expected after logout)
+      if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
+        console.log('refreshAccessToken: No valid refresh token (expected after logout)');
+        return { data: { session: null }, error: null };
+      }
+      console.error('Refresh timed out:', err);
+      consecutiveFailures++;
       return { data: { session: null }, error: err };
     }) as any;
     
     if (error) {
+      // Suppress refresh token errors
+      if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
+        console.log('refreshAccessToken: Invalid refresh token (expected after logout)');
+        return null;
+      }
       console.error('Error refreshing session:', error);
       consecutiveFailures++;
-      
-      // Reset client if too many failures
-      if (consecutiveFailures >= MAX_FAILURES_BEFORE_RESET) {
-        console.log('Too many refresh failures, resetting client...');
-        resetSupabaseClient();
-        consecutiveFailures = 0;
-      }
-      
       return null;
     }
     
     if (!session) {
-      console.warn('No session after refresh');
+      console.log('refreshAccessToken: No session after refresh');
       return null;
     }
     
@@ -139,6 +149,11 @@ export async function refreshAccessToken(): Promise<string | null> {
     consecutiveFailures = 0; // Reset on success
     return session.access_token;
   } catch (error: any) {
+    // Suppress refresh token errors
+    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+      console.log('refreshAccessToken: Invalid token (expected after logout)');
+      return null;
+    }
     console.error('Error in refreshAccessToken:', error);
     consecutiveFailures++;
     return null;
@@ -242,13 +257,6 @@ export async function apiRequest<T>(
   } catch (error: any) {
     clearTimeout(timeoutId);
     consecutiveFailures++;
-    
-    // Reset Supabase client if too many consecutive failures
-    if (consecutiveFailures >= MAX_FAILURES_BEFORE_RESET) {
-      console.log('Too many API failures, resetting Supabase client...');
-      resetSupabaseClient();
-      consecutiveFailures = 0;
-    }
     
     if (error.name === 'AbortError') {
       throw new Error('Request timeout - please check your connection or try refreshing the page');

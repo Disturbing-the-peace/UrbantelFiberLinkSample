@@ -12,11 +12,11 @@ export const authConfig = {
 
   // Password Requirements
   password: {
-    minLength: 12,
-    requireUppercase: true,
+    minLength: 8,
+    requireUppercase: false,
     requireLowercase: true,
     requireNumbers: true,
-    requireSpecialChars: true,
+    requireSpecialChars: false,
   },
 
   // 2FA Settings

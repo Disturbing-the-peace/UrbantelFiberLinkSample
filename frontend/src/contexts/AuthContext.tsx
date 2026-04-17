@@ -1,9 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { getCurrentUser, signOut as authSignOut, User } from '@/lib/auth';
-import { getSupabaseClient, resetSupabaseClient, clearCurrentSession } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { getCurrentUser, User } from '@/lib/auth';
+import { getSupabaseClient, clearCurrentSession } from '@/lib/supabase';
 import { clearCachedSession } from '@/lib/api';
 
 interface AuthContextType {
@@ -19,7 +19,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
   const refreshUser = async () => {
     try {
@@ -41,8 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const currentUser = await getCurrentUser();
         console.log('AuthContext: Current user:', currentUser);
         setUser(currentUser);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error initializing auth:', error);
+        // If it's a refresh token error, it means we're logged out - this is expected
+        if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+          console.log('AuthContext: No valid session found (expected after logout)');
+        }
         setUser(null);
       } finally {
         setLoading(false);
@@ -81,13 +84,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.refreshSession();
         if (error) {
           console.error('AuthContext: Token refresh failed:', error);
+          // If refresh fails with invalid token, user is logged out
+          if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
+            console.log('AuthContext: Invalid refresh token, clearing user state');
+            setUser(null);
+          }
         } else if (data.session) {
           console.log('AuthContext: Token refreshed proactively');
           const currentUser = await getCurrentUser();
           setUser(currentUser);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('AuthContext: Error during proactive refresh:', error);
+        // If refresh fails, assume logged out
+        if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+          setUser(null);
+        }
       }
     }, 50 * 60 * 1000); // 50 minutes
 
@@ -101,54 +113,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('AuthContext: Signing out...');
       
-      // Clear user state immediately
+      // Get the Supabase client
+      console.log('AuthContext: Getting Supabase client...');
+      const supabase = getSupabaseClient();
+      
+      // Sign out with global scope FIRST (this clears Supabase's internal storage)
+      console.log('AuthContext: Calling supabase.auth.signOut()...');
+      const signOutPromise = supabase.auth.signOut({ scope: 'global' });
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SignOut timeout')), 5000)
+      );
+      
+      const { error } = await Promise.race([signOutPromise, timeoutPromise])
+        .catch((err) => {
+          console.error('SignOut timed out or failed:', err);
+          return { error: err };
+        }) as any;
+        
+      if (error) {
+        console.error('Sign out error:', error);
+      } else {
+        console.log('AuthContext: SignOut successful');
+      }
+      
+      // Clear user state
+      console.log('AuthContext: Clearing user state...');
       setUser(null);
       
       // Clear in-memory session
+      console.log('AuthContext: Clearing in-memory session...');
       clearCurrentSession();
       
-      // Reset Supabase client to clear any cached sessions
-      const supabase = resetSupabaseClient();
-      
-      // Sign out with global scope
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      if (error) {
-        console.error('Sign out error:', error);
-      }
-      
       // Clear any cached data
+      console.log('AuthContext: Clearing cached session...');
       clearCachedSession();
       
-      // Clear all browser storage
+      // Clear all browser storage thoroughly
       if (typeof window !== 'undefined') {
-        // Clear all localStorage items
-        localStorage.clear();
+        console.log('AuthContext: Clearing browser storage...');
+        // Get all localStorage keys
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) {
+            keysToRemove.push(key);
+          }
+        }
+        
+        // Remove all keys
+        keysToRemove.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
+        // Clear sessionStorage
         sessionStorage.clear();
         
-        // Also clear specific Supabase keys
-        localStorage.removeItem('sb-auth-token');
-        localStorage.removeItem('supabase.auth.token');
-        
-        // Clear any cookies
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
+        console.log('AuthContext: All storage cleared');
       }
       
-      console.log('AuthContext: All data cleared, redirecting...');
+      console.log('AuthContext: Redirecting to login...');
       
       // Force complete page reload to clear all state
       window.location.replace('/login?logout=success');
     } catch (error) {
       console.error('Error signing out:', error);
       // Still clear everything and redirect
+      console.log('AuthContext: Error occurred, forcing cleanup and redirect...');
       setUser(null);
       clearCurrentSession();
       if (typeof window !== 'undefined') {
         localStorage.clear();
         sessionStorage.clear();
-        localStorage.removeItem('sb-auth-token');
-        localStorage.removeItem('supabase.auth.token');
       }
       window.location.replace('/login?logout=success');
     }

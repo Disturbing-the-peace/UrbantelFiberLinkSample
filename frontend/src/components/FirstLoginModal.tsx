@@ -99,6 +99,33 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
         profile_picture_url: profilePictureUrl,
       });
       
+      // After password change via admin API, the current session becomes invalid
+      // We need to sign in again with the new password to get a fresh session
+      console.log('Password changed, signing in with new password...');
+      
+      if (!user?.email) {
+        toast.error('Unable to refresh session. Please log in again.');
+        window.location.href = '/login';
+        return;
+      }
+      
+      const supabase = getSupabaseClient();
+      const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: newPassword,
+      });
+      
+      if (signInError || !session) {
+        console.error('Error signing in after password change:', signInError);
+        toast.error('Password updated! Please log in again with your new password.');
+        // Clear everything and redirect to login
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/login';
+        return;
+      }
+      
+      console.log('Successfully signed in with new password');
       toast.success('Password updated successfully! Welcome to UrbanTel FiberLink.');
       onComplete();
     } catch (error: any) {

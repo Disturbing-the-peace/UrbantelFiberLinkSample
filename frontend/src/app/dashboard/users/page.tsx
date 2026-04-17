@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { usersApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
+import DeleteUserModal from '@/components/DeleteUserModal';
 
 export default function UsersPage() {
   return (
@@ -21,6 +22,8 @@ function UsersPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; email: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { user } = useAuth();
   const toast = useToast();
 
@@ -78,29 +81,24 @@ function UsersPageContent() {
       return;
     }
 
-    const confirmMessage = `⚠️ WARNING: This will PERMANENTLY DELETE this user!\n\nUser: ${userEmail}\n\nThis action CANNOT be undone. The user will be removed from:\n- Authentication system\n- User database\n- All access permissions\n\nAre you absolutely sure?`;
-    
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    // Open the delete modal
+    setDeletingUser({ id: userId, email: userEmail });
+  };
 
-    // Double confirmation for safety
-    const doubleConfirm = prompt('Type "DELETE" to confirm permanent deletion:');
-    if (doubleConfirm !== 'DELETE') {
-      toast.error('Deletion cancelled - confirmation text did not match');
-      return;
-    }
+  const confirmDeleteUser = async () => {
+    if (!deletingUser) return;
 
-    const loadingToast = toast.loading('Permanently deleting user...');
+    setDeleteLoading(true);
     try {
-      await usersApi.deletePermanent(userId);
-      toast.dismiss(loadingToast);
+      await usersApi.deletePermanent(deletingUser.id);
       toast.success('User permanently deleted');
+      setDeletingUser(null);
       fetchUsers();
     } catch (err) {
-      toast.dismiss(loadingToast);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete user';
       toast.error(errorMessage);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -253,6 +251,14 @@ function UsersPageContent() {
           }}
         />
       )}
+
+      <DeleteUserModal
+        isOpen={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={confirmDeleteUser}
+        userEmail={deletingUser?.email || ''}
+        loading={deleteLoading}
+      />
     </div>
   );
 }

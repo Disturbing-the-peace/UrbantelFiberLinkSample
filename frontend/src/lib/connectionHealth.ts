@@ -1,12 +1,11 @@
 /**
  * Connection Health Monitor
- * Provides utilities to detect and fix stale Supabase connections
+ * Provides utilities to detect and monitor Supabase connection health
  */
 
-import { getSupabaseClient, resetSupabaseClient } from './supabase';
+import { getSupabaseClient } from './supabase';
 
 let lastSuccessfulRequest = Date.now();
-let connectionResetCount = 0;
 
 /**
  * Mark a successful request
@@ -25,27 +24,14 @@ export function isConnectionStale(): boolean {
 }
 
 /**
- * Reset connection if it appears stale
+ * Check if connection appears stale (for logging/monitoring)
  */
 export function resetIfStale(): boolean {
   if (isConnectionStale()) {
-    console.log('[ConnectionHealth] Connection appears stale, resetting...');
-    resetSupabaseClient();
-    connectionResetCount++;
-    lastSuccessfulRequest = Date.now();
+    console.log('[ConnectionHealth] Connection appears stale - consider refreshing the page');
     return true;
   }
   return false;
-}
-
-/**
- * Force reset the connection
- */
-export function forceReset() {
-  console.log('[ConnectionHealth] Force resetting connection...');
-  resetSupabaseClient();
-  connectionResetCount++;
-  lastSuccessfulRequest = Date.now();
 }
 
 /**
@@ -55,7 +41,6 @@ export function getConnectionStats() {
   return {
     lastSuccessfulRequest: new Date(lastSuccessfulRequest),
     timeSinceLastSuccess: Date.now() - lastSuccessfulRequest,
-    connectionResetCount,
     isStale: isConnectionStale(),
   };
 }

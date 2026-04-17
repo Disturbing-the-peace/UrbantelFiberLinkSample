@@ -81,12 +81,47 @@ export const getCurrentUser = async (): Promise<User | null> => {
   try {
     console.log('getCurrentUser: Checking auth session...');
     const supabase = getSupabaseClient();
+    
+    // First check if there's a valid session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    console.log('getCurrentUser: Session check:', { 
+      hasSession: !!session, 
+      error: sessionError 
+    });
+    
+    // Handle refresh token errors gracefully (expected after logout)
+    if (sessionError) {
+      if (sessionError.message?.includes('Refresh Token') || sessionError.message?.includes('Invalid')) {
+        console.log('getCurrentUser: No valid refresh token (expected after logout)');
+        return null;
+      }
+      console.error('getCurrentUser: Session error:', sessionError);
+      return null;
+    }
+    
+    if (!session) {
+      console.log('getCurrentUser: No valid session found');
+      return null;
+    }
+    
+    // Then get the user from the session
     const {
       data: { user },
+      error: userError
     } = await supabase.auth.getUser();
 
-    console.log('getCurrentUser: Auth user:', user);
+    console.log('getCurrentUser: Auth user:', user, 'error:', userError);
 
+    if (userError) {
+      if (userError.message?.includes('Refresh Token') || userError.message?.includes('Invalid')) {
+        console.log('getCurrentUser: Invalid user token (expected after logout)');
+        return null;
+      }
+      console.error('getCurrentUser: User error:', userError);
+      return null;
+    }
+    
     if (!user) {
       console.log('getCurrentUser: No auth user found');
       return null;
@@ -96,7 +131,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
     const userDetails = await getUserDetails(user.id);
     console.log('getCurrentUser: User details:', userDetails);
     return userDetails;
-  } catch (error) {
+  } catch (error: any) {
+    // Suppress refresh token errors (expected after logout)
+    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+      console.log('getCurrentUser: Invalid token (expected after logout)');
+      return null;
+    }
     console.error('Error getting current user:', error);
     return null;
   }

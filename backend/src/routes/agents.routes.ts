@@ -253,10 +253,10 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
 
 /**
  * DELETE /api/agents/:id
- * Soft delete an agent (superadmin only)
+ * Soft delete an agent (admin and superadmin)
  * Sets is_active to false instead of deleting the record
  */
-router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -297,10 +297,10 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
 
 /**
  * DELETE /api/agents/:id/permanent
- * Permanently delete an agent (superadmin only)
+ * Permanently delete an agent (admin and superadmin)
  * WARNING: This action cannot be undone
  */
-router.delete('/:id/permanent', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.delete('/:id/permanent', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

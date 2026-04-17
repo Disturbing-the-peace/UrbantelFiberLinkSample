@@ -31,6 +31,10 @@ router.post('/complete-first-login', verifyToken, async (req: Request, res: Resp
       return res.status(400).json({ error: 'New password is required' });
     }
 
+    if (new_password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
     // Update password in Supabase Auth
     const { error: passwordError } = await supabase.auth.admin.updateUserById(
       userId,

@@ -5,6 +5,7 @@ import { Agent } from '@/types';
 import { agentsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import DeleteAgentModal from '@/components/DeleteAgentModal';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -14,6 +15,9 @@ export default function AgentsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,31 +119,31 @@ export default function AgentsPage() {
   };
 
   const handlePermanentDelete = async (agentId: string, agentName: string) => {
-    const confirmText = 'DELETE';
-    const userInput = prompt(
-      `⚠️ WARNING: This will PERMANENTLY delete the agent "${agentName}".\n\n` +
-      `This action CANNOT be undone!\n\n` +
-      `Type "${confirmText}" to confirm:`
-    );
+    setAgentToDelete({ id: agentId, name: agentName });
+    setDeleteModalOpen(true);
+  };
 
-    if (userInput !== confirmText) {
-      if (userInput !== null) {
-        toast.error('Deletion cancelled - confirmation text did not match');
-      }
-      return;
-    }
+  const confirmPermanentDelete = async () => {
+    if (!agentToDelete) return;
 
-    const loadingToast = toast.loading('Permanently deleting agent...');
+    setDeleteLoading(true);
     try {
-      await agentsApi.deletePermanent(agentId);
-      toast.dismiss(loadingToast);
+      await agentsApi.deletePermanent(agentToDelete.id);
       toast.success('Agent permanently deleted');
+      setDeleteModalOpen(false);
+      setAgentToDelete(null);
       fetchAgents();
     } catch (err) {
-      toast.dismiss(loadingToast);
       const errorMessage = err instanceof Error ? err.message : 'Failed to permanently delete agent';
       toast.error(errorMessage);
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setAgentToDelete(null);
   };
 
   const copyReferralLink = (referralCode: string) => {
@@ -553,6 +557,14 @@ export default function AgentsPage() {
           }}
         />
       )}
+
+      <DeleteAgentModal
+        isOpen={deleteModalOpen && !!agentToDelete}
+        onClose={cancelDelete}
+        onConfirm={confirmPermanentDelete}
+        agentName={agentToDelete?.name || ''}
+        loading={deleteLoading}
+      />
     </div>
   );
 }

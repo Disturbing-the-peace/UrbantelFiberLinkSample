@@ -43,12 +43,9 @@ export function getSupabaseClient(): SupabaseClient {
   return supabaseInstance;
 }
 
-// Reset the client (useful when connection goes stale)
-export function resetSupabaseClient(): SupabaseClient {
-  console.log('[Supabase] Resetting client instance...');
-  supabaseInstance = createSupabaseClient();
-  return supabaseInstance;
-}
+// REMOVED: resetSupabaseClient() - we don't need to reset the client
+// Supabase's signOut() handles cleanup internally, and resetting creates
+// the risk of split-state bugs with multiple client instances
 
 // Export the default instance for backward compatibility
 export const supabase = getSupabaseClient();
