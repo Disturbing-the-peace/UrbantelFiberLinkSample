@@ -34,17 +34,35 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFirstLogin, setShowFirstLogin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
-  // Check if user needs first login or onboarding
+  // Check if user needs first login or onboarding (only once)
   useEffect(() => {
-    if (user) {
+    console.log('Dashboard Layout: User changed:', {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        is_first_login: user.is_first_login,
+        onboarding_completed: user.onboarding_completed
+      } : null,
+      onboardingChecked
+    });
+
+    if (user && !onboardingChecked) {
       if (user.is_first_login) {
+        console.log('Dashboard Layout: Showing first login modal');
         setShowFirstLogin(true);
+        setOnboardingChecked(true);
       } else if (!user.onboarding_completed) {
+        console.log('Dashboard Layout: Showing onboarding tour');
         setShowOnboarding(true);
+        setOnboardingChecked(true);
+      } else {
+        console.log('Dashboard Layout: User has completed onboarding');
+        setOnboardingChecked(true);
       }
     }
-  }, [user]);
+  }, [user, onboardingChecked]);
 
   const handleFirstLoginComplete = async () => {
     setShowFirstLogin(false);
@@ -56,6 +74,8 @@ export default function DashboardLayout({
   const handleOnboardingComplete = async () => {
     setShowOnboarding(false);
     await refreshUser();
+    // Don't show again
+    setOnboardingChecked(true);
   };
 
   const navigation = [

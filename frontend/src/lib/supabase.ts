@@ -60,7 +60,10 @@ let currentSession: { access_token: string; expires_at?: number } | null = null;
 if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((event, session) => {
     console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
-    if (session) {
+    if (event === 'SIGNED_OUT' || !session) {
+      currentSession = null;
+      console.log('Session cleared from memory');
+    } else if (session) {
       currentSession = {
         access_token: session.access_token,
         expires_at: session.expires_at,
@@ -74,9 +77,6 @@ if (typeof window !== 'undefined') {
         const minutesUntilExpiry = Math.floor(timeUntilExpiry / 60000);
         console.log(`Token will expire in ${minutesUntilExpiry} minutes`);
       }
-    } else {
-      currentSession = null;
-      console.log('Session cleared from memory');
     }
   });
 
@@ -105,4 +105,12 @@ if (typeof window !== 'undefined') {
  */
 export function getCurrentSession() {
   return currentSession;
+}
+
+/**
+ * Clear the current session from memory
+ */
+export function clearCurrentSession() {
+  console.log('[Supabase] Clearing session from memory');
+  currentSession = null;
 }

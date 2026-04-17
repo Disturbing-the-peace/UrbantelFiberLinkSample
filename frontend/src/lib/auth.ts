@@ -109,9 +109,11 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
   try {
     console.log('getUserDetails: Fetching for user ID:', userId);
     const supabase = getSupabaseClient();
+    
+    // Try to get all fields, but handle missing ones gracefully
     const { data, error } = await supabase
       .from('user_auth_status')
-      .select('id, email, role, full_name, is_active, requires_2fa, profile_picture_url, created_at')
+      .select('*')
       .eq('id', userId)
       .single();
 
@@ -131,6 +133,10 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
       isActive: data.is_active,
       requires2FA: data.requires_2fa,
       profile_picture_url: data.profile_picture_url,
+      is_first_login: data.is_first_login ?? false, // Default to false if missing
+      onboarding_completed: data.onboarding_completed ?? true, // Default to true if missing
+      password_changed_at: data.password_changed_at,
+      last_login_at: data.last_login_at,
       created_at: data.created_at,
     };
   } catch (error) {

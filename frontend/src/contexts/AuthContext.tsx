@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getCurrentUser, signOut as authSignOut, User } from '@/lib/auth';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseClient, resetSupabaseClient, clearCurrentSession } from '@/lib/supabase';
+import { clearCachedSession } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      console.log('AuthContext: Refreshing user...');
       const currentUser = await getCurrentUser();
+      console.log('AuthContext: Refreshed user result:', currentUser);
       setUser(currentUser);
     } catch (error) {
       console.error('Error refreshing user:', error);
@@ -55,13 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthContext: Auth state changed:', event);
+      console.log('AuthContext: Auth state changed:', event, 'Session:', !!session);
       if (event === 'SIGNED_IN' && session) {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' || !session) {
+        console.log('AuthContext: User signed out, clearing state');
         setUser(null);
-        router.push('/login');
+        // Don't redirect here as signOut function handles it
       } else if (event === 'TOKEN_REFRESHED' && session) {
         console.log('AuthContext: Token refreshed successfully');
         const currentUser = await getCurrentUser();
@@ -100,29 +104,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear user state immediately
       setUser(null);
       
-      // Sign out from Supabase
-      const { error } = await authSignOut();
+      // Clear in-memory session
+      clearCurrentSession();
+      
+      // Reset Supabase client to clear any cached sessions
+      const supabase = resetSupabaseClient();
+      
+      // Sign out with global scope
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         console.error('Sign out error:', error);
       }
       
-      console.log('AuthContext: Sign out successful, redirecting...');
+      // Clear any cached data
+      clearCachedSession();
       
-      // Force redirect immediately
-      router.push('/login?logout=success');
+      // Clear all browser storage
+      if (typeof window !== 'undefined') {
+        // Clear all localStorage items
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Also clear specific Supabase keys
+        localStorage.removeItem('sb-auth-token');
+        localStorage.removeItem('supabase.auth.token');
+        
+        // Clear any cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+      }
       
-      // Force page reload to clear all state
-      setTimeout(() => {
-        window.location.href = '/login?logout=success';
-      }, 100);
+      console.log('AuthContext: All data cleared, redirecting...');
+      
+      // Force complete page reload to clear all state
+      window.location.replace('/login?logout=success');
     } catch (error) {
       console.error('Error signing out:', error);
-      // Still clear state and redirect even if there's an error
+      // Still clear everything and redirect
       setUser(null);
-      router.push('/login?logout=success');
-      setTimeout(() => {
-        window.location.href = '/login?logout=success';
-      }, 100);
+      clearCurrentSession();
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+        localStorage.removeItem('sb-auth-token');
+        localStorage.removeItem('supabase.auth.token');
+      }
+      window.location.replace('/login?logout=success');
     }
   };
 

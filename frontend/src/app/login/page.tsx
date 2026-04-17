@@ -251,9 +251,19 @@ function LoginPageContent() {
       } else {
         // No 2FA required, refresh user and redirect
         console.log('No 2FA required, refreshing user and redirecting to:', redirectPath);
-        await refreshUser();
-        console.log('User refreshed, pushing to:', redirectPath);
-        router.push(redirectPath);
+        try {
+          await refreshUser();
+          console.log('User refreshed successfully, redirecting to:', redirectPath);
+          
+          // Add a small delay to ensure state is updated
+          setTimeout(() => {
+            router.push(redirectPath);
+          }, 100);
+        } catch (refreshError) {
+          console.error('Error refreshing user:', refreshError);
+          // Still redirect even if refresh fails
+          router.push(redirectPath);
+        }
       }
     } catch (err: any) {
       setError(getAuthErrorMessage(err));
