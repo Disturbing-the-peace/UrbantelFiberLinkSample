@@ -20,9 +20,9 @@ const generateReferralCode = (): string => {
 
 /**
  * POST /api/agents
- * Create a new agent (superadmin only)
+ * Create a new agent (admin and superadmin)
  */
-router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const { name, contact_number, email, role, team_leader_id } = req.body;
 
@@ -186,9 +186,9 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
 
 /**
  * PUT /api/agents/:id
- * Update an agent (superadmin only)
+ * Update an agent (admin and superadmin)
  */
-router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, contact_number, email, role, team_leader_id, is_active } = req.body;
