@@ -20,7 +20,8 @@ import {
   BarChart3, 
   Trash2, 
   Settings,
-  Calendar
+  Calendar,
+  Globe
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -81,6 +82,7 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { name: 'Agents', href: '/dashboard/agents', icon: Users },
+    { name: 'Portal', href: '/dashboard/portal', icon: Globe },
     { name: 'Applications', href: '/dashboard/applications', icon: FileText },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: UserCheck },
     { name: 'Commissions', href: '/dashboard/commissions', icon: DollarSign },

@@ -146,10 +146,27 @@ export default function AgentsPage() {
     setAgentToDelete(null);
   };
 
+  const copyReferralCode = (referralCode: string) => {
+    // Copy just the referral code
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(referralCode)
+        .then(() => {
+          setCopiedCode(referralCode);
+          toast.success('Referral code copied to clipboard');
+          setTimeout(() => setCopiedCode(null), 2000);
+        })
+        .catch(() => {
+          fallbackCopy(referralCode, referralCode);
+        });
+    } else {
+      fallbackCopy(referralCode, referralCode);
+    }
+  };
+
   const copyReferralLink = (referralCode: string) => {
+    // Copy the full referral link
     const referralLink = `${window.location.origin}/apply?ref=${referralCode}`;
     
-    // Try modern clipboard API first (requires HTTPS)
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(referralLink)
         .then(() => {
@@ -158,11 +175,9 @@ export default function AgentsPage() {
           setTimeout(() => setCopiedCode(null), 2000);
         })
         .catch(() => {
-          // Fallback if clipboard API fails
           fallbackCopy(referralLink, referralCode);
         });
     } else {
-      // Fallback for HTTP or older browsers
       fallbackCopy(referralLink, referralCode);
     }
   };
@@ -372,22 +387,30 @@ export default function AgentsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => copyReferralLink(agent.referral_code)}
-                      className="text-left group flex items-center gap-2"
-                      title="Click to copy referral link"
-                    >
-                      <span className="text-sm font-mono text-gray-900 dark:text-white group-hover:text-[#00A191] transition-colors cursor-pointer underline decoration-dotted underline-offset-2">
-                        {agent.referral_code}
-                      </span>
-                      {copiedCode === agent.referral_code ? (
-                        <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓ Copied!</span>
-                      ) : (
-                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-[#00A191] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => copyReferralCode(agent.referral_code)}
+                        className="text-left group"
+                        title="Click to copy referral code"
+                      >
+                        <span className="text-sm font-mono text-gray-900 dark:text-white group-hover:text-[#00A191] transition-colors cursor-pointer underline decoration-dotted underline-offset-2">
+                          {agent.referral_code}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => copyReferralLink(agent.referral_code)}
+                        className="group"
+                        title="Click to copy full referral link"
+                      >
+                        {copiedCode === agent.referral_code ? (
+                          <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓ Copied!</span>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-[#00A191] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-white">{agent.contact_number || 'N/A'}</div>
@@ -484,13 +507,19 @@ export default function AgentsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400 w-20">Code:</span>
                   <button
-                    onClick={() => copyReferralLink(agent.referral_code)}
-                    className="flex items-center gap-2 group"
-                    title="Click to copy referral link"
+                    onClick={() => copyReferralCode(agent.referral_code)}
+                    className="group"
+                    title="Click to copy referral code"
                   >
                     <span className="text-sm font-mono text-gray-900 dark:text-white group-hover:text-[#00A191] transition-colors underline decoration-dotted">
                       {agent.referral_code}
                     </span>
+                  </button>
+                  <button
+                    onClick={() => copyReferralLink(agent.referral_code)}
+                    className="group"
+                    title="Click to copy full referral link"
+                  >
                     {copiedCode === agent.referral_code ? (
                       <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓</span>
                     ) : (
@@ -658,25 +687,27 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Contact Number
+              Contact Number (Optional)
             </label>
             <input
               type="tel"
               value={formData.contact_number}
               onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="e.g., +1234567890"
             />
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
+              Email (Optional)
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="e.g., agent@example.com"
             />
           </div>
 
@@ -745,14 +776,14 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#80CBC4] text-white rounded-md hover:bg-[#6BB8B0] disabled:bg-[#80CBC4]/50 font-medium"
+              className="px-4 py-2 bg-[#00A191] text-white rounded-md hover:bg-[#008c7a] disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
               disabled={submitting}
             >
               {submitting ? 'Saving...' : agent ? 'Update' : 'Create'}
