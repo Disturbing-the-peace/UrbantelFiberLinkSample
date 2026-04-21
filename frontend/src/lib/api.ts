@@ -12,6 +12,9 @@ interface RequestOptions extends RequestInit {
 let consecutiveFailures = 0;
 const MAX_FAILURES_BEFORE_RESET = 2;
 
+// Track ongoing refresh to prevent multiple simultaneous refreshes
+let refreshPromise: Promise<string | null> | null = null;
+
 /**
  * Get the current Supabase access token (synchronous from memory)
  * Automatically refreshes if token is about to expire (within 5 minutes)
@@ -26,18 +29,31 @@ export async function getAccessToken(): Promise<string | null> {
     // First, try to get from memory (instant)
     const session = getCurrentSession();
     
-    // Check if token is about to expire (within 5 minutes)
+    // Check if token has already expired or is about to expire (within 5 minutes)
     if (session?.access_token && session?.expires_at) {
       const expiresAt = session.expires_at * 1000; // Convert to milliseconds
       const now = Date.now();
       const fiveMinutes = 5 * 60 * 1000;
+      
+      // If token has already expired, force refresh
+      if (expiresAt <= now) {
+        console.log('Token has expired, refreshing...');
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          consecutiveFailures = 0;
+          return newToken;
+        }
+        // If refresh fails, session is invalid
+        console.error('Token expired and refresh failed');
+        return null;
+      }
       
       // If token expires in less than 5 minutes, refresh it proactively
       if (expiresAt - now < fiveMinutes) {
         console.log('Token expiring soon, refreshing proactively...');
         const newToken = await refreshAccessToken();
         if (newToken) {
-          consecutiveFailures = 0; // Reset failure counter on success
+          consecutiveFailures = 0;
           return newToken;
         }
         // If refresh fails, try to use the current token anyway
@@ -48,11 +64,11 @@ export async function getAccessToken(): Promise<string | null> {
       return session.access_token;
     }
 
-    // If not in memory, try to get from Supabase with timeout
+    // If not in memory, try to get from Supabase with shorter timeout
     console.log('Session not in memory, fetching from Supabase...');
     
     const timeoutPromise = new Promise<null>((_, reject) => 
-      setTimeout(() => reject(new Error('Session fetch timeout')), 5000)
+      setTimeout(() => reject(new Error('Session fetch timeout')), 3000)
     );
     
     const sessionPromise = supabase.auth.getSession();
@@ -86,6 +102,17 @@ export async function getAccessToken(): Promise<string | null> {
       return null;
     }
     
+    // Check if the fetched session is already expired
+    if (freshSession.expires_at && freshSession.expires_at * 1000 <= Date.now()) {
+      console.log('Fetched session is already expired, refreshing...');
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        consecutiveFailures = 0;
+        return newToken;
+      }
+      return null;
+    }
+    
     consecutiveFailures = 0; // Reset on success
     return freshSession.access_token;
   } catch (error: any) {
@@ -102,62 +129,77 @@ export async function getAccessToken(): Promise<string | null> {
 
 /**
  * Refresh the session and get a new token
+ * Prevents multiple simultaneous refresh attempts
  */
 export async function refreshAccessToken(): Promise<string | null> {
-  try {
-    console.log('Refreshing session...');
-    const supabase = getSupabaseClient();
-    
-    // Add timeout to refresh operation
-    const timeoutPromise = new Promise<null>((_, reject) => 
-      setTimeout(() => reject(new Error('Refresh timeout')), 10000)
-    );
-    
-    const refreshPromise = supabase.auth.refreshSession();
-    
-    const { data: { session }, error } = await Promise.race([
-      refreshPromise,
-      timeoutPromise
-    ]).catch((err) => {
-      // Suppress refresh token errors (expected after logout)
-      if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
-        console.log('refreshAccessToken: No valid refresh token (expected after logout)');
-        return { data: { session: null }, error: null };
-      }
-      console.error('Refresh timed out:', err);
-      consecutiveFailures++;
-      return { data: { session: null }, error: err };
-    }) as any;
-    
-    if (error) {
-      // Suppress refresh token errors
-      if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
-        console.log('refreshAccessToken: Invalid refresh token (expected after logout)');
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    console.log('Refresh already in progress, waiting...');
+    return refreshPromise;
+  }
+
+  // Start a new refresh
+  refreshPromise = (async () => {
+    try {
+      console.log('Refreshing session...');
+      const supabase = getSupabaseClient();
+      
+      // Add shorter timeout to refresh operation (5 seconds)
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
+      );
+      
+      const refreshOp = supabase.auth.refreshSession();
+      
+      const { data: { session }, error } = await Promise.race([
+        refreshOp,
+        timeoutPromise
+      ]).catch((err) => {
+        // Suppress refresh token errors (expected after logout)
+        if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
+          console.log('refreshAccessToken: No valid refresh token (expected after logout)');
+          return { data: { session: null }, error: null };
+        }
+        console.error('Refresh timed out:', err);
+        consecutiveFailures++;
+        return { data: { session: null }, error: err };
+      }) as any;
+      
+      if (error) {
+        // Suppress refresh token errors
+        if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
+          console.log('refreshAccessToken: Invalid refresh token (expected after logout)');
+          return null;
+        }
+        console.error('Error refreshing session:', error);
+        consecutiveFailures++;
         return null;
       }
-      console.error('Error refreshing session:', error);
+      
+      if (!session) {
+        console.log('refreshAccessToken: No session after refresh');
+        return null;
+      }
+      
+      console.log('Session refreshed successfully');
+      consecutiveFailures = 0; // Reset on success
+      return session.access_token;
+    } catch (error: any) {
+      // Suppress refresh token errors
+      if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
+        console.log('refreshAccessToken: Invalid token (expected after logout)');
+        return null;
+      }
+      console.error('Error in refreshAccessToken:', error);
       consecutiveFailures++;
       return null;
+    } finally {
+      // Clear the promise after completion
+      refreshPromise = null;
     }
-    
-    if (!session) {
-      console.log('refreshAccessToken: No session after refresh');
-      return null;
-    }
-    
-    console.log('Session refreshed successfully');
-    consecutiveFailures = 0; // Reset on success
-    return session.access_token;
-  } catch (error: any) {
-    // Suppress refresh token errors
-    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-      console.log('refreshAccessToken: Invalid token (expected after logout)');
-      return null;
-    }
-    console.error('Error in refreshAccessToken:', error);
-    consecutiveFailures++;
-    return null;
-  }
+  })();
+
+  return refreshPromise;
 }
 
 /**
@@ -191,12 +233,12 @@ export async function apiRequest<T>(
     }
   }
 
-  // Add timeout to prevent hanging requests (30 seconds)
+  // Add timeout to prevent hanging requests (15 seconds for initial request)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
-    console.warn(`Request to ${endpoint} timed out after 30s`);
+    console.warn(`Request to ${endpoint} timed out after 15s`);
     controller.abort();
-  }, 30000); // 30 second timeout
+  }, 15000); // 15 second timeout
 
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -219,7 +261,10 @@ export async function apiRequest<T>(
         requestHeaders['Authorization'] = `Bearer ${newToken}`;
         
         const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(() => retryController.abort(), 60000);
+        const retryTimeoutId = setTimeout(() => {
+          console.warn(`Retry request to ${endpoint} timed out after 15s`);
+          retryController.abort();
+        }, 15000); // 15 second timeout for retry
         
         try {
           const retryResponse = await fetch(`${API_URL}${endpoint}`, {

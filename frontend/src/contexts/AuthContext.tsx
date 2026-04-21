@@ -76,12 +76,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Proactive token refresh - refresh every 50 minutes (before 60-minute expiration)
+    // Proactive token refresh - refresh every 45 minutes (before 60-minute expiration)
     const refreshInterval = setInterval(async () => {
       console.log('AuthContext: Proactively refreshing token...');
       try {
         const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.refreshSession();
+        
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise<any>((_, reject) => 
+          setTimeout(() => reject(new Error('Refresh timeout')), 5000)
+        );
+        
+        const refreshPromise = supabase.auth.refreshSession();
+        
+        const { data, error } = await Promise.race([refreshPromise, timeoutPromise])
+          .catch((err) => {
+            console.error('AuthContext: Refresh timed out or failed:', err);
+            return { data: { session: null }, error: err };
+          }) as any;
+          
         if (error) {
           console.error('AuthContext: Token refresh failed:', error);
           // If refresh fails with invalid token, user is logged out
@@ -101,11 +114,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
         }
       }
-    }, 50 * 60 * 1000); // 50 minutes
+    }, 45 * 60 * 1000); // 45 minutes
+
+    // Session validation on visibility change (when user returns to tab)
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        console.log('AuthContext: Tab became visible, validating session...');
+        try {
+          const supabase = getSupabaseClient();
+          
+          // Quick session check with timeout
+          const timeoutPromise = new Promise<any>((_, reject) => 
+            setTimeout(() => reject(new Error('Session check timeout')), 3000)
+          );
+          
+          const sessionPromise = supabase.auth.getSession();
+          
+          const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise])
+            .catch((err) => {
+              console.error('AuthContext: Session check failed:', err);
+              return { data: { session: null }, error: err };
+            }) as any;
+          
+          if (error || !session) {
+            console.log('AuthContext: No valid session found on visibility change');
+            setUser(null);
+          } else {
+            // Check if session is expired
+            if (session.expires_at && session.expires_at * 1000 <= Date.now()) {
+              console.log('AuthContext: Session expired, refreshing...');
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              if (refreshError || !refreshData.session) {
+                console.log('AuthContext: Refresh failed, clearing user');
+                setUser(null);
+              } else {
+                console.log('AuthContext: Session refreshed on visibility change');
+                const currentUser = await getCurrentUser();
+                setUser(currentUser);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('AuthContext: Error validating session:', error);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       subscription.unsubscribe();
       clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [router]);
 
