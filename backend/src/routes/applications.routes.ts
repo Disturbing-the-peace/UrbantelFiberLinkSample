@@ -125,13 +125,18 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
       .from('applications')
       .select(`
         *,
-        agents:agent_id (id, name, referral_code, contact_number, email, messenger_link),
+        agents:agent_id (id, name, referral_code, contact_number, email),
         plans:plan_id (id, name, category, speed, price, inclusions)
       `)
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    if (error || !application) {
+    if (error) {
+      console.error('Error fetching application:', error);
+      return res.status(500).json({ error: 'Failed to fetch application', details: error.message });
+    }
+
+    if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
 
@@ -212,7 +217,7 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
       .eq('id', id)
       .select(`
         *,
-        agents:agent_id (id, name, referral_code, contact_number, email, messenger_link),
+        agents:agent_id (id, name, referral_code, contact_number, email),
         plans:plan_id (id, name, category, speed, price, inclusions)
       `)
       .single();
@@ -261,7 +266,6 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
           name: updatedApp.agents?.name || 'Unknown Agent',
           phone: updatedApp.agents?.contact_number,
           email: updatedApp.agents?.email,
-          messengerLink: updatedApp.agents?.messenger_link,
         };
 
         // Send notifications (non-blocking)

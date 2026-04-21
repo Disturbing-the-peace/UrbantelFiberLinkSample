@@ -103,7 +103,7 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
       .from('applications')
       .select(`
         *,
-        agents:agent_id (id, name, referral_code, contact_number, email, messenger_link),
+        agents:agent_id (id, name, referral_code, contact_number, email),
         plans:plan_id (id, name, category, speed, price, inclusions)
       `)
       .eq('id', id)
