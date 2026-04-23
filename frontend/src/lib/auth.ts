@@ -84,7 +84,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
     // Get session with timeout
     const sessionPromise = supabase.auth.getSession();
     const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      setTimeout(() => reject(new Error('Session check timeout')), 10000)
     );
     
     const result = await Promise.race([
@@ -369,7 +369,6 @@ export const getAuthErrorMessage = (error: any): string => {
     'User not found': 'User account not found',
     'Invalid token': 'Your session has expired. Please login again.',
     'Token expired': 'Your session has expired. Please login again.',
-    'Invalid refresh token': 'Your session has expired. Please login again.',
     'User already registered': 'An account with this email already exists',
     'Password is too weak': 'Password does not meet security requirements',
     'Invalid TOTP code': 'Invalid verification code. Please try again.',

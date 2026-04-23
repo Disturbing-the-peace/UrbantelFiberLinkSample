@@ -121,4 +121,49 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
   }
 });
 
+/**
+ * DELETE /api/subscribers/:id
+ * Permanently delete a subscriber (superadmin only)
+ * WARNING: This action cannot be undone
+ */
+router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    // Only superadmins can delete subscribers
+    if (user.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Only superadmins can delete subscribers' });
+    }
+
+    // Check if subscriber exists
+    const { data: subscriber, error: fetchError } = await supabase
+      .from('applications')
+      .select('id, status')
+      .eq('id', id)
+      .eq('status', 'Activated')
+      .single();
+
+    if (fetchError || !subscriber) {
+      return res.status(404).json({ error: 'Subscriber not found' });
+    }
+
+    // Delete the subscriber (application record)
+    const { error: deleteError } = await supabase
+      .from('applications')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('Error deleting subscriber:', deleteError);
+      return res.status(500).json({ error: 'Failed to delete subscriber' });
+    }
+
+    res.json({ message: 'Subscriber deleted successfully' });
+  } catch (error) {
+    console.error('Error in DELETE /api/subscribers/:id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

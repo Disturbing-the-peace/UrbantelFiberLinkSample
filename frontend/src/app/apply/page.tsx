@@ -846,8 +846,8 @@ function ApplicationFormContent() {
                             >
                               <div className="text-center">
                                 <div className="text-4xl mb-3">{typeIcon}</div>
-                                <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{type}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{plansByType[type].length} ka plano</p>
+                                <h4 className="text-xl font-bold text-gray-800 mb-2">{type}</h4>
+                                <p className="text-sm text-gray-700">{plansByType[type].length} ka plano</p>
                               </div>
                             </button>
                           );

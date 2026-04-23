@@ -73,6 +73,13 @@ export const agentsApi = {
     5 * 60 * 1000 // Cache for 5 minutes
   ),
   getById: (id: string) => apiRequest<any>(`/api/agents/${id}`),
+  getTeamMembers: async (teamLeaderId: string) => {
+    const response = await fetch(`${API_URL}/api/agents/team-members/${teamLeaderId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch team members');
+    }
+    return response.json();
+  },
   create: async (data: any) => {
     const result = await apiRequest<any>('/api/agents', {
       method: 'POST',
@@ -137,6 +144,9 @@ export const applicationsApi = {
     });
     return result;
   },
+  delete: (id: string) => apiRequest<any>(`/api/applications/${id}`, {
+    method: 'DELETE',
+  }),
 };
 
 /**
@@ -160,6 +170,9 @@ export const subscribersApi = {
     return apiRequest<any[]>(`/api/subscribers${query ? `?${query}` : ''}`);
   },
   getById: (id: string) => apiRequest<any>(`/api/subscribers/${id}`),
+  delete: (id: string) => apiRequest<any>(`/api/subscribers/${id}`, {
+    method: 'DELETE',
+  }),
 };
 
 /**
@@ -247,6 +260,9 @@ export const usersApi = {
   }),
   deletePermanent: (id: string) => apiRequest<any>(`/api/users/${id}/permanent`, {
     method: 'DELETE',
+  }),
+  resetPassword: (id: string) => apiRequest<any>(`/api/users/${id}/reset-password`, {
+    method: 'POST',
   }),
 };
 

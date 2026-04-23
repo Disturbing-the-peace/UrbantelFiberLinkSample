@@ -57,7 +57,7 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+    <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:px-6 rounded-bl-lg rounded-br-lg overflow-hidden">
       {/* Mobile view */}
       <div className="flex flex-1 justify-between sm:hidden">
         <button

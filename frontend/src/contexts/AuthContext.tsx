@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -20,7 +19,6 @@ const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const userRef = useRef<User | null>(null);
 
   // Keep ref in sync with state
@@ -91,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (event === 'SIGNED_IN' && session) {
         // Only fetch user if we don't already have one
-        // This prevents refetching on token refresh
+        // This prevents unnecessary refetching
         if (!userRef.current) {
           console.log('[AuthContext] User signed in, fetching user details');
           const currentUser = await getCurrentUser();
@@ -106,9 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         console.log('[AuthContext] User explicitly signed out');
         setUser(null);
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('[AuthContext] Token refreshed, keeping current user');
-        // Don't change user state on token refresh
       } else if (event === 'USER_UPDATED' && session) {
         console.log('[AuthContext] User updated, refetching');
         const currentUser = await getCurrentUser();

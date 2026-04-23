@@ -160,6 +160,46 @@ router.get('/by-referral/:referralCode', async (req: Request, res: Response) => 
 });
 
 /**
+ * GET /api/agents/team-members/:teamLeaderId
+ * Get all agents under a specific team leader (PUBLIC - no auth required)
+ */
+router.get('/team-members/:teamLeaderId', async (req: Request, res: Response) => {
+  try {
+    const { teamLeaderId } = req.params;
+
+    // Verify the team leader exists and is active
+    const { data: teamLeader, error: teamLeaderError } = await supabase
+      .from('agents')
+      .select('id, role')
+      .eq('id', teamLeaderId)
+      .eq('is_active', true)
+      .single();
+
+    if (teamLeaderError || !teamLeader) {
+      return res.status(404).json({ error: 'Team leader not found' });
+    }
+
+    // Fetch all agents under this team leader
+    const { data: teamMembers, error } = await supabase
+      .from('agents')
+      .select('id, name, referral_code, contact_number, email, role')
+      .eq('team_leader_id', teamLeaderId)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching team members:', error);
+      return res.status(500).json({ error: 'Failed to fetch team members' });
+    }
+
+    res.json(teamMembers || []);
+  } catch (error) {
+    console.error('Error in GET /api/agents/team-members/:teamLeaderId:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/agents/:id
  * Get a single agent by ID (admin and superadmin)
  */

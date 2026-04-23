@@ -264,17 +264,6 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
             spacing: { after: 100 }
           }),
 
-          // Installation Address Section
-          new Paragraph({
-            text: 'Installation Address',
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 300, after: 200 }
-          }),
-          new Paragraph({
-            text: application.installation_address || 'Same as above',
-            spacing: { after: 100 }
-          }),
-
           // Plan Information Section
           new Paragraph({
             text: 'Plan Information',

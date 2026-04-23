@@ -347,8 +347,9 @@ export default function AgentsPage() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg transition-colors duration-300 overflow-hidden relative min-h-[400px] border border-[#C9B8EC]">
-        {loading && (
+      <div className="shadow-md rounded-lg overflow-hidden border border-[#C9B8EC]">
+        <div className="bg-white dark:bg-gray-800 transition-colors duration-300 relative min-h-[400px]">
+          {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
               <LoadingSpinner size="md" />
@@ -588,17 +589,18 @@ export default function AgentsPage() {
             }
           </div>
         )}
-        
-        {/* Pagination */}
-        {!loading && filteredAgents.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredAgents.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-          />
-        )}
+      </div>
+      
+      {/* Pagination */}
+      {!loading && filteredAgents.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredAgents.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
+      )}
       </div>
 
       {showCreateModal && (

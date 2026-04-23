@@ -250,6 +250,72 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
 });
 
 /**
+ * POST /api/users/:id/reset-password
+ * Reset a user's password to default (superadmin only)
+ * Sets password to '123123123'
+ */
+router.post('/:id/reset-password', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Ensure id is a string
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    // Check if user exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('users')
+      .select('id, email, full_name')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Reset password to default
+    const defaultPassword = '123123123';
+    const { error: resetError } = await supabase.auth.admin.updateUserById(
+      id,
+      { password: defaultPassword }
+    );
+
+    if (resetError) {
+      console.error('Error resetting password:', resetError);
+      return res.status(500).json({ error: 'Failed to reset password' });
+    }
+
+    // Log to audit
+    await supabase.from('audit_log').insert({
+      action: 'PASSWORD_RESET',
+      entity_type: 'user',
+      entity_id: id,
+      performed_by: req.user!.id,
+      metadata: {
+        reset_user: {
+          email: existing.email,
+          full_name: existing.full_name,
+        },
+      },
+    });
+
+    res.json({ 
+      message: 'Password reset successfully',
+      default_password: defaultPassword,
+      user: {
+        id: existing.id,
+        email: existing.email,
+        full_name: existing.full_name,
+      }
+    });
+  } catch (error) {
+    console.error('Error in POST /api/users/:id/reset-password:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * DELETE /api/users/:id/permanent
  * Permanently delete a user (superadmin only)
  * Removes user from both Auth and database

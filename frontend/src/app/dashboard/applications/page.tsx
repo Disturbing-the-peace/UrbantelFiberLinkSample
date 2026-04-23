@@ -5,6 +5,8 @@ import { Application, Agent } from '@/types';
 import { applicationsApi, agentsApi, exportApi } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ApplicationWithRelations extends Application {
   agents?: Agent;
@@ -26,9 +28,12 @@ export default function ApplicationsPage() {
   const [downloadingDocs, setDownloadingDocs] = useState<Record<string, boolean>>({});
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const { user } = useAuth();
+  const toast = useToast();
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -36,6 +41,14 @@ export default function ApplicationsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
+  
+  // Get team leaders from agents
+  const teamLeaders = agents.filter(agent => agent.role === 'Team Leader' && agent.is_active);
+  
+  // Get agents filtered by team leader
+  const filteredAgentsByTeamLeader = teamLeaderFilter
+    ? agents.filter(agent => agent.team_leader_id === teamLeaderFilter && agent.is_active)
+    : agents.filter(agent => agent.is_active);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,6 +77,11 @@ export default function ApplicationsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, agentFilter, startDate, endDate]);
+  
+  // Reset agent filter when team leader changes
+  useEffect(() => {
+    setAgentFilter('');
+  }, [teamLeaderFilter]);
 
   const fetchAgents = async () => {
     try {
@@ -115,6 +133,7 @@ export default function ApplicationsPage() {
 
   const clearFilters = () => {
     setStatusFilter('');
+    setTeamLeaderFilter('');
     setAgentFilter('');
     setStartDate('');
     setEndDate('');
@@ -124,7 +143,7 @@ export default function ApplicationsPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, agentFilter, startDate, endDate]);
+  }, [statusFilter, teamLeaderFilter, agentFilter, startDate, endDate]);
   
   // Calculate pagination
   const filteredApplications = applications;
@@ -208,6 +227,24 @@ export default function ApplicationsPage() {
     }
   };
 
+  const handleDeleteApplication = async (applicationId: string, applicationName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete the application for ${applicationName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    const loadingToast = toast.loading('Deleting application...');
+    try {
+      await applicationsApi.delete(applicationId);
+      toast.dismiss(loadingToast);
+      toast.success('Application deleted successfully');
+      fetchApplications();
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete application';
+      toast.error(errorMessage);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       'Submitted': 'bg-blue-100 text-blue-800',
@@ -252,7 +289,7 @@ export default function ApplicationsPage() {
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg transition-colors duration-300 p-3 md:p-4 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2">
                 Status
               </label>
               <select
@@ -271,25 +308,51 @@ export default function ApplicationsPage() {
             </div>
 
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
-                Agent
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2">
+                Team Leader
               </label>
               <select
-                value={agentFilter}
-                onChange={(e) => setAgentFilter(e.target.value)}
+                value={teamLeaderFilter}
+                onChange={(e) => setTeamLeaderFilter(e.target.value)}
                 className="w-full px-2 md:px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Agents</option>
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
+                <option value="">All Team Leaders</option>
+                {teamLeaders.map((leader) => (
+                  <option key={leader.id} value={leader.id}>
+                    {leader.name}
                   </option>
                 ))}
               </select>
             </div>
 
+            {teamLeaderFilter && (
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2">
+                  Agent <span className="text-xs text-gray-500">(under selected team leader)</span>
+                </label>
+                <select
+                  value={agentFilter}
+                  onChange={(e) => setAgentFilter(e.target.value)}
+                  className="w-full px-2 md:px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={filteredAgentsByTeamLeader.length === 0}
+                >
+                  <option value="">
+                    {filteredAgentsByTeamLeader.length === 0 
+                      ? 'No agents under this team leader' 
+                      : 'All Agents (under team leader)'
+                    }
+                  </option>
+                  {filteredAgentsByTeamLeader.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} {agent.role && `(${agent.role})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2">
                 Start Date
               </label>
               <input
@@ -301,7 +364,7 @@ export default function ApplicationsPage() {
             </div>
 
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 md:mb-2">
                 End Date
               </label>
               <input
@@ -313,7 +376,7 @@ export default function ApplicationsPage() {
             </div>
           </div>
 
-          {(statusFilter || agentFilter || startDate || endDate) && (
+          {(statusFilter || teamLeaderFilter || agentFilter || startDate || endDate) && (
             <div className="mt-3 md:mt-4">
               <button
                 onClick={clearFilters}
@@ -326,8 +389,9 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg transition-colors duration-300 overflow-hidden relative min-h-[400px]">
-        {loading && (
+      <div className="shadow-md rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 transition-colors duration-300 relative min-h-[400px]">
+          {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
               <LoadingSpinner size="md" />
@@ -428,6 +492,17 @@ export default function ApplicationsPage() {
                           </svg>
                         )}
                       </button>
+                      {user?.role === 'superadmin' && (
+                        <button
+                          onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                          title="Delete Application"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -520,22 +595,34 @@ export default function ApplicationsPage() {
                       </>
                     )}
                   </button>
+                  {user?.role === 'superadmin' && (
+                    <button
+                      onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                      title="Delete"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ))
           )}
         </div>
-        
-        {/* Pagination */}
-        {!loading && filteredApplications.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredApplications.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-          />
-        )}
+      </div>
+      
+      {/* Pagination */}
+      {!loading && filteredApplications.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredApplications.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
+      )}
       </div>
 
       {selectedApplication && (

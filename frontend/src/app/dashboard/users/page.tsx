@@ -114,6 +114,23 @@ function UsersPageContent() {
     }
   };
 
+  const handleResetPassword = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to reset the password for ${userEmail}? The password will be set to: 123123123`)) {
+      return;
+    }
+
+    const loadingToast = toast.loading('Resetting password...');
+    try {
+      const response = await usersApi.resetPassword(userId);
+      toast.dismiss(loadingToast);
+      toast.success(`Password reset successfully! New password: ${response.default_password}`);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reset password';
+      toast.error(errorMessage);
+    }
+  };
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -145,8 +162,9 @@ function UsersPageContent() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg transition-colors duration-300 overflow-hidden relative min-h-[400px]">
-        {loading && (
+      <div className="shadow-md rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 transition-colors duration-300 relative min-h-[400px]">
+          {loading && (
           <div className="absolute inset-0 bg-white/75 dark:bg-gray-800/75 flex items-center justify-center z-10">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
@@ -155,7 +173,8 @@ function UsersPageContent() {
           </div>
         )}
         
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-[#C9B8EC]">
           <thead className="bg-[#00A191]">
             <tr>
@@ -218,6 +237,15 @@ function UsersPageContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
+                    <button
+                      onClick={() => handleResetPassword(user.id, user.email)}
+                      className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 rounded hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                      title="Reset Password"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                    </button>
                     {user.is_active && (
                       <button
                         onClick={() => handleDeactivateUser(user.id)}
@@ -246,22 +274,105 @@ function UsersPageContent() {
         </table>
         </div>
 
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          {paginatedUsers.length === 0 && !loading ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No users found. Create your first user to get started.
+            </div>
+          ) : (
+            paginatedUsers.map((user) => (
+              <div key={user.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">{user.full_name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{user.email}</p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                      user.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {user.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+
+                <div className="mb-3">
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      user.role === 'superadmin'
+                        ? 'bg-teal-100 text-teal-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => handleEditUser(user)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleResetPassword(user.id, user.email)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-yellow-600 hover:text-yellow-700 bg-yellow-50 hover:bg-yellow-100 rounded transition-colors"
+                    title="Reset Password"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                  </button>
+                  {user.is_active && (
+                    <button
+                      onClick={() => handleDeactivateUser(user.id)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 rounded transition-colors"
+                      title="Deactivate"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.email)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                    title="Delete"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {users.length === 0 && !loading && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             No users found. Create your first user to get started.
           </div>
         )}
-        
-        {/* Pagination */}
-        {!loading && users.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={users.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-          />
-        )}
+      </div>
+      
+      {/* Pagination */}
+      {!loading && users.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={users.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
+      )}
       </div>
 
       {showCreateModal && (

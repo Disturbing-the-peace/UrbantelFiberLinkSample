@@ -7,7 +7,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { ArrowLeft, MapPin, Copy } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import MapModal to avoid SSR issues with Leaflet
@@ -85,6 +85,15 @@ interface Commission {
   };
 }
 
+interface TeamMember {
+  id: string;
+  name: string;
+  referral_code: string;
+  contact_number?: string;
+  email?: string;
+  role?: string;
+}
+
 export default function AgentPortalPage() {
   const params = useParams();
   const referralCode = params.referralCode as string;
@@ -94,11 +103,13 @@ export default function AgentPortalPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'applicants' | 'subscribers' | 'commissions'>('applicants');
+  const [activeTab, setActiveTab] = useState<'applicants' | 'subscribers' | 'commissions' | 'team'>('applicants');
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ address: string; lat?: number; lng?: number; name: string } | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -258,6 +269,22 @@ export default function AgentPortalPage() {
       const agentData = await agentResponse.json();
       setAgent(agentData);
 
+      // Fetch team members if agent is a Team Leader
+      if (agentData.role === 'Team Leader') {
+        try {
+          const teamMembersResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/agents/team-members/${agentData.id}`
+          );
+          if (teamMembersResponse.ok) {
+            const teamMembersData = await teamMembersResponse.json();
+            setTeamMembers(teamMembersData);
+          }
+        } catch (err) {
+          console.error('Error fetching team members:', err);
+          // Don't fail the whole page if team members fetch fails
+        }
+      }
+
       // Fetch applications using public endpoint
       const applicationsResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/applications/public/${agentData.id}`
@@ -334,6 +361,12 @@ export default function AgentPortalPage() {
       'Voided': 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200',
     };
     return colors[status] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200';
+  };
+
+  const copyToClipboard = (text: string, type: 'code' | 'link') => {
+    navigator.clipboard.writeText(text);
+    setCopiedCode(text);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
   if (loading) {
@@ -517,6 +550,18 @@ export default function AgentPortalPage() {
           >
             Commissions ({commissions.length})
           </button>
+          {agent?.role === 'Team Leader' && (
+            <button
+              onClick={() => setActiveTab('team')}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'team'
+                  ? 'bg-teal-600 text-white shadow-md'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              My Team ({teamMembers.length})
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -665,7 +710,7 @@ export default function AgentPortalPage() {
               </table>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'commissions' ? (
           <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
             <div className="overflow-x-auto">
               <table className="min-w-full">
@@ -731,7 +776,159 @@ export default function AgentPortalPage() {
               </table>
             </div>
           </div>
-        )}
+        ) : activeTab === 'team' ? (
+          <div className="relative z-10 space-y-4">
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        Agent Name
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        Referral Code
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {teamMembers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                          No team members yet
+                        </td>
+                      </tr>
+                    ) : (
+                      teamMembers.map((member) => (
+                        <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              {member.name}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 inline-flex text-xs font-semibold rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200">
+                              {member.role || 'CBA'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-mono text-sm font-semibold" style={{ color: '#00A191' }}>
+                              {member.referral_code}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {member.contact_number || 'N/A'}
+                            </div>
+                            {member.email && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {member.email}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => copyToClipboard(member.referral_code, 'code')}
+                                className="px-3 py-1 text-xs font-medium rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
+                              >
+                                {copiedCode === member.referral_code ? 'Copied!' : 'Copy Code'}
+                              </button>
+                              <button
+                                onClick={() => copyToClipboard(
+                                  `${window.location.origin}/agent/${member.referral_code}`,
+                                  'link'
+                                )}
+                                className="px-3 py-1 text-xs font-medium rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                              >
+                                {copiedCode === `${window.location.origin}/agent/${member.referral_code}` ? 'Copied!' : 'Copy Link'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {teamMembers.length === 0 ? (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">
+                  No team members yet
+                </div>
+              ) : (
+                teamMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm transition-colors duration-300"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {member.name}
+                        </h3>
+                        <span className="inline-block mt-1 px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200">
+                          {member.role || 'CBA'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-3">
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Referral Code</span>
+                        <p className="font-mono text-sm font-semibold" style={{ color: '#00A191' }}>
+                          {member.referral_code}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Contact</span>
+                        <p className="text-sm text-gray-900 dark:text-white">
+                          {member.contact_number || 'N/A'}
+                        </p>
+                        {member.email && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {member.email}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyToClipboard(member.referral_code, 'code')}
+                        className="flex-1 px-3 py-2 text-xs font-medium rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
+                      >
+                        {copiedCode === member.referral_code ? 'Copied!' : 'Copy Code'}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(
+                          `${window.location.origin}/agent/${member.referral_code}`,
+                          'link'
+                        )}
+                        className="flex-1 px-3 py-2 text-xs font-medium rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                      >
+                        {copiedCode === `${window.location.origin}/agent/${member.referral_code}` ? 'Copied!' : 'Copy Link'}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Map Modal */}
