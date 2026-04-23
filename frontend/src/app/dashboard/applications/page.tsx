@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Application, Agent } from '@/types';
 import { applicationsApi, agentsApi, exportApi } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Pagination from '@/components/Pagination';
 
 interface ApplicationWithRelations extends Application {
   agents?: Agent;
@@ -31,6 +32,10 @@ export default function ApplicationsPage() {
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     let isMounted = true;
@@ -113,7 +118,21 @@ export default function ApplicationsPage() {
     setAgentFilter('');
     setStartDate('');
     setEndDate('');
+    setCurrentPage(1);
   };
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, agentFilter, startDate, endDate]);
+  
+  // Calculate pagination
+  const filteredApplications = applications;
+  const totalPages = Math.ceil(filteredApplications.length / ITEMS_PER_PAGE);
+  const paginatedApplications = filteredApplications.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleDownloadDocuments = async (applicationId: string) => {
     try {
@@ -343,14 +362,14 @@ export default function ApplicationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {applications.length === 0 && !loading ? (
+              {paginatedApplications.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500 text-sm">
                     No applications found. Try adjusting your filters.
                   </td>
                 </tr>
               ) : (
-                applications.map((application) => (
+                paginatedApplications.map((application) => (
                 <tr 
                   key={application.id} 
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-l-4 border-transparent hover:border-l-[#00A191]"
@@ -420,12 +439,12 @@ export default function ApplicationsPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-          {applications.length === 0 && !loading ? (
+          {paginatedApplications.length === 0 && !loading ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
               No applications found. Try adjusting your filters.
             </div>
           ) : (
-            applications.map((application) => (
+            paginatedApplications.map((application) => (
               <div 
                 key={application.id} 
                 className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -506,6 +525,17 @@ export default function ApplicationsPage() {
             ))
           )}
         </div>
+        
+        {/* Pagination */}
+        {!loading && filteredApplications.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredApplications.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
+        )}
       </div>
 
       {selectedApplication && (

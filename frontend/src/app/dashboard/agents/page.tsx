@@ -6,6 +6,7 @@ import { agentsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DeleteAgentModal from '@/components/DeleteAgentModal';
+import Pagination from '@/components/Pagination';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -24,6 +25,10 @@ export default function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'CBA' | 'Organic'>('all');
   const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
   
   const toast = useToast();
 
@@ -73,7 +78,15 @@ export default function AgentsPage() {
     }
 
     setFilteredAgents(filtered);
+    setCurrentPage(1); // Reset to page 1 when filters change
   }, [agents, searchQuery, statusFilter, roleFilter, teamLeaderFilter]);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
+  const paginatedAgents = filteredAgents.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const fetchAgents = async () => {
     try {
@@ -370,7 +383,7 @@ export default function AgentsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAgents.map((agent) => (
+              {paginatedAgents.map((agent) => (
                 <tr key={agent.id} className="hover:bg-[#80CBC4]/5 dark:hover:bg-gray-700 transition-colors border-l-4 border-transparent hover:border-l-[#80CBC4]">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">{agent.name}</div>
@@ -468,7 +481,7 @@ export default function AgentsPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-          {filteredAgents.map((agent) => (
+          {paginatedAgents.map((agent) => (
             <div key={agent.id} className="p-4 hover:bg-[#80CBC4]/5 dark:hover:bg-gray-700 transition-colors">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
@@ -574,6 +587,17 @@ export default function AgentsPage() {
               : 'No agents match your filters. Try adjusting your search criteria.'
             }
           </div>
+        )}
+        
+        {/* Pagination */}
+        {!loading && filteredAgents.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredAgents.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         )}
       </div>
 

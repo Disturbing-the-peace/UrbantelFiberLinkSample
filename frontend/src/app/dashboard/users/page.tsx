@@ -7,6 +7,7 @@ import { usersApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import DeleteUserModal from '@/components/DeleteUserModal';
+import Pagination from '@/components/Pagination';
 
 export default function UsersPage() {
   return (
@@ -26,6 +27,17 @@ function UsersPageContent() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const { user } = useAuth();
   const toast = useToast();
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(users.length / ITEMS_PER_PAGE);
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   useEffect(() => {
     fetchUsers();
@@ -165,7 +177,7 @@ function UsersPageContent() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {users.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">{user.full_name}</div>
@@ -238,6 +250,17 @@ function UsersPageContent() {
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             No users found. Create your first user to get started.
           </div>
+        )}
+        
+        {/* Pagination */}
+        {!loading && users.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={users.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         )}
       </div>
 

@@ -39,7 +39,7 @@ export default function PortalPage() {
       </div>
 
       {/* Portal Access Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 max-w-3xl">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 bg-[#00A191]/10 rounded-full flex items-center justify-center">
             <Globe className="w-8 h-8 text-[#00A191]" />

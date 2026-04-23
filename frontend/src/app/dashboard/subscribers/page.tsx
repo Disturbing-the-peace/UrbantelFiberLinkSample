@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { subscribersApi, agentsApi, plansApi, exportApi } from '@/lib/api';
 import { Agent, Plan } from '@/types';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Pagination from '@/components/Pagination';
 import 'leaflet/dist/leaflet.css';
 
 // Dynamically import map components to avoid SSR issues
@@ -157,6 +158,10 @@ export default function SubscribersPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [exportingCsv, setExportingCsv] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     const loadData = async () => {
@@ -240,7 +245,20 @@ export default function SubscribersPage() {
     setPlanFilter('');
     setStartDate('');
     setEndDate('');
+    setCurrentPage(1);
   };
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [agentFilter, planFilter, startDate, endDate]);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(subscribers.length / ITEMS_PER_PAGE);
+  const paginatedSubscribers = subscribers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleExportCsv = async () => {
     try {
@@ -467,7 +485,7 @@ export default function SubscribersPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {subscribers.map((subscriber) => (
+              {paginatedSubscribers.map((subscriber) => (
                 <tr key={subscriber.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -517,7 +535,7 @@ export default function SubscribersPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-          {subscribers.map((subscriber) => (
+          {paginatedSubscribers.map((subscriber) => (
             <div key={subscriber.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <div className="space-y-3">
                 {/* Name and Email */}
@@ -599,13 +617,18 @@ export default function SubscribersPage() {
             No subscribers found. Try adjusting your filters.
           </div>
         )}
+        
+        {/* Pagination */}
+        {!loading && subscribers.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={subscribers.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
+        )}
       </div>
-
-      {subscribers.length > 0 && (
-        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          Showing {subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}
-        </div>
-      )}
 
       {/* Subscriber Details Modal */}
       {showDetailsModal && selectedSubscriber && (

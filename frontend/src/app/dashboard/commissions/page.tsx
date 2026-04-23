@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { commissionsApi, agentsApi } from '@/lib/api';
 import { Agent } from '@/types';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Pagination from '@/components/Pagination';
 
 interface Commission {
   id: string;
@@ -44,6 +45,10 @@ export default function CommissionsPage() {
   // Filters
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     const loadData = async () => {
@@ -120,7 +125,20 @@ export default function CommissionsPage() {
   const clearFilters = () => {
     setAgentFilter('');
     setStatusFilter('');
+    setCurrentPage(1);
   };
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [agentFilter, statusFilter]);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(commissions.length / ITEMS_PER_PAGE);
+  const paginatedCommissions = commissions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -273,7 +291,7 @@ export default function CommissionsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {commissions.map((commission) => (
+              {paginatedCommissions.map((commission) => (
                 <tr key={commission.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -369,7 +387,7 @@ export default function CommissionsPage() {
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-          {commissions.map((commission) => (
+          {paginatedCommissions.map((commission) => (
             <div key={commission.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <div className="space-y-3">
                 {/* Subscriber Name */}
@@ -499,13 +517,18 @@ export default function CommissionsPage() {
             No commissions found. Try adjusting your filters.
           </div>
         )}
+        
+        {/* Pagination */}
+        {!loading && commissions.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={commissions.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
+        )}
       </div>
-
-      {commissions.length > 0 && (
-        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          Showing {commissions.length} commission{commissions.length !== 1 ? 's' : ''}
-        </div>
-      )}
 
       {/* Edit Commission Modal */}
       {editingCommission && (

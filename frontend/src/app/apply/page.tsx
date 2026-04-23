@@ -27,6 +27,7 @@ function ApplicationFormContent() {
   const [lastName, setLastName] = useState('');
   const [birthday, setBirthday] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
 
   const [location, setLocation] = useState<LocationData | null>(null);
   
@@ -54,6 +55,7 @@ function ApplicationFormContent() {
     lastName?: string;
     birthday?: string;
     phoneNumber?: string;
+    email?: string;
   }>({});
 
   useEffect(() => {
@@ -142,6 +144,25 @@ function ApplicationFormContent() {
     return undefined;
   };
 
+  const validateEmail = (emailValue: string): string | undefined => {
+    // Email is now required
+    if (!emailValue.trim()) {
+      return 'Email is required';
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailValue)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (emailValue.length > 255) {
+      return 'Email is too long';
+    }
+    
+    return undefined;
+  };
+
   const validateStep1 = (): boolean => {
     const errors: typeof validationErrors = {};
     
@@ -149,6 +170,7 @@ function ApplicationFormContent() {
     errors.lastName = validateName(lastName, 'Apelyido');
     errors.birthday = validateBirthday(birthday);
     errors.phoneNumber = validatePhoneNumber(phoneNumber);
+    errors.email = validateEmail(email);
     
     setValidationErrors(errors);
     
@@ -181,6 +203,13 @@ function ApplicationFormContent() {
     setPhoneNumber(value);
     if (validationErrors.phoneNumber) {
       setValidationErrors(prev => ({ ...prev, phoneNumber: validatePhoneNumber(value) }));
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (validationErrors.email) {
+      setValidationErrors(prev => ({ ...prev, email: validateEmail(value) }));
     }
   };
 
@@ -238,6 +267,7 @@ function ApplicationFormContent() {
           lastName,
           birthday,
           phoneNumber,
+          email: email.trim(), // Required field
           address: location?.address || '',
           latitude: location?.latitude,
           longitude: location?.longitude,
@@ -652,6 +682,36 @@ function ApplicationFormContent() {
                       </p>
                     )}
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">11 ka numero (e.g., 09123456789)</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      required
+                      maxLength={255}
+                      className={`w-full px-3 sm:px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        validationErrors.email 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
+                      }`}
+                      placeholder="your.email@example.com"
+                    />
+                    {validationErrors.email && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        {validationErrors.email}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Para sa updates ug notifications</p>
                   </div>
                 </div>
               </div>
