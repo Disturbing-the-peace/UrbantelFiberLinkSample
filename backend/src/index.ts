@@ -31,7 +31,8 @@ const allowedOrigins = process.env.NODE_ENV === 'production'
 
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['Content-Disposition']
 }));
 // Increase body size limit to 50MB for image uploads
 app.use(express.json({ limit: '50mb' }));

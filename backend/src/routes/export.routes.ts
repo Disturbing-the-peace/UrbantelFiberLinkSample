@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase';
 import { verifyToken, checkAdmin } from '../middleware/auth';
 import archiver from 'archiver';
 import { CUSTOMER_DOCUMENTS_BUCKET } from '../lib/storage';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 
 const router = Router();
 
@@ -152,62 +153,258 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
       return res.status(404).json({ error: 'No documents found for this application' });
     }
 
-    // Create subscriber information text content
-    const subscriberInfo = `
-SUBSCRIBER INFORMATION
-======================
+    // Create subscriber information Word document
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          // Title
+          new Paragraph({
+            text: 'SUBSCRIBER INFORMATION',
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 }
+          }),
 
-Personal Information:
---------------------
-Name: ${application.first_name} ${application.middle_name || ''} ${application.last_name}
-Date of Birth: ${application.date_of_birth || 'N/A'}
-Contact Number: ${application.contact_number || 'N/A'}
-Email: ${application.email || 'N/A'}
+          // Personal Information Section
+          new Paragraph({
+            text: 'Personal Information',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Name: ', bold: true }),
+              new TextRun(`${application.first_name} ${application.middle_name || ''} ${application.last_name}`)
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Date of Birth: ', bold: true }),
+              new TextRun(application.date_of_birth || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Contact Number: ', bold: true }),
+              new TextRun(application.contact_number || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Email: ', bold: true }),
+              new TextRun(application.email || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
 
-Address:
---------
-${application.address || 'N/A'}
-Barangay: ${application.barangay || 'N/A'}
-City: ${application.city || 'N/A'}
-Province: ${application.province || 'N/A'}
-Zip Code: ${application.zip_code || 'N/A'}
+          // Address Section
+          new Paragraph({
+            text: 'Address',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Street Address: ', bold: true }),
+              new TextRun(application.address || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Barangay: ', bold: true }),
+              new TextRun(application.barangay || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'City: ', bold: true }),
+              new TextRun(application.city || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Province: ', bold: true }),
+              new TextRun(application.province || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Zip Code: ', bold: true }),
+              new TextRun(application.zip_code || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
 
-Installation Address:
---------------------
-${application.installation_address || 'Same as above'}
+          // Location Coordinates Section
+          new Paragraph({
+            text: 'Location Coordinates',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Latitude: ', bold: true }),
+              new TextRun(application.latitude?.toString() || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Longitude: ', bold: true }),
+              new TextRun(application.longitude?.toString() || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
 
-Plan Information:
-----------------
-Plan: ${application.plan?.name || 'N/A'}
-Speed: ${application.plan?.speed || 'N/A'}
-Price: ₱${application.plan?.price || 'N/A'}
+          // Installation Address Section
+          new Paragraph({
+            text: 'Installation Address',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            text: application.installation_address || 'Same as above',
+            spacing: { after: 100 }
+          }),
 
-Agent Information:
------------------
-Agent Name: ${application.agent?.name || 'N/A'}
-Referral Code: ${application.agent?.referral_code || 'N/A'}
+          // Plan Information Section
+          new Paragraph({
+            text: 'Plan Information',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Plan: ', bold: true }),
+              new TextRun(application.plan?.name || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Speed: ', bold: true }),
+              new TextRun(application.plan?.speed || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Price: ', bold: true }),
+              new TextRun(`₱${application.plan?.price || 'N/A'}`)
+            ],
+            spacing: { after: 100 }
+          }),
 
-Application Details:
--------------------
-Application ID: ${application.id}
-Status: ${application.status}
-Submitted: ${application.created_at ? new Date(application.created_at).toLocaleString() : 'N/A'}
-${application.date_activated ? `Activated: ${new Date(application.date_activated).toLocaleString()}` : ''}
-${application.status_reason ? `Status Reason: ${application.status_reason}` : ''}
+          // Agent Information Section
+          new Paragraph({
+            text: 'Agent Information',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Agent Name: ', bold: true }),
+              new TextRun(application.agent?.name || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Referral Code: ', bold: true }),
+              new TextRun(application.agent?.referral_code || 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
 
-Additional Notes:
-----------------
-${application.notes || 'None'}
+          // Application Details Section
+          new Paragraph({
+            text: 'Application Details',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Application ID: ', bold: true }),
+              new TextRun(application.id)
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Status: ', bold: true }),
+              new TextRun(application.status)
+            ],
+            spacing: { after: 100 }
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Submitted: ', bold: true }),
+              new TextRun(application.created_at ? new Date(application.created_at).toLocaleString() : 'N/A')
+            ],
+            spacing: { after: 100 }
+          }),
+          ...(application.date_activated ? [
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Activated: ', bold: true }),
+                new TextRun(new Date(application.date_activated).toLocaleString())
+              ],
+              spacing: { after: 100 }
+            })
+          ] : []),
+          ...(application.status_reason ? [
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Status Reason: ', bold: true }),
+                new TextRun(application.status_reason)
+              ],
+              spacing: { after: 100 }
+            })
+          ] : []),
 
----
-Generated: ${new Date().toLocaleString()}
-`.trim();
+          // Additional Notes Section
+          new Paragraph({
+            text: 'Additional Notes',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 200 }
+          }),
+          new Paragraph({
+            text: application.notes || 'None',
+            spacing: { after: 100 }
+          }),
+
+          // Footer
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Generated: ', italics: true }),
+              new TextRun({ text: new Date().toLocaleString(), italics: true })
+            ],
+            spacing: { before: 400 },
+            alignment: AlignmentType.CENTER
+          })
+        ]
+      }]
+    });
+
+    // Generate Word document buffer
+    const docBuffer = await Packer.toBuffer(doc);
 
     // Create a safe filename from applicant name (remove special characters)
     const safeName = `${application.first_name}_${application.last_name}`
       .replace(/[^a-zA-Z0-9_-]/g, '_')
       .replace(/_+/g, '_')
       .toLowerCase();
+
+    console.log(`[Export] Generating ZIP for: ${application.first_name} ${application.last_name}`);
+    console.log(`[Export] Safe filename: ${safeName}_documents.zip`);
 
     // Set response headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
@@ -229,8 +426,8 @@ Generated: ${new Date().toLocaleString()}
     // Pipe archive to response
     archive.pipe(res);
 
-    // Add subscriber information text file first
-    archive.append(subscriberInfo, { name: 'subscriber_info.txt' });
+    // Add subscriber information Word document first
+    archive.append(docBuffer, { name: 'subscriber_info.docx' });
 
     // Download and add each document to the archive
     for (const doc of documentUrls) {

@@ -148,13 +148,19 @@ export default function ApplicationsPage() {
 
       // Get the filename from Content-Disposition header or use default
       const contentDisposition = response.headers.get('Content-Disposition');
+      console.log('Content-Disposition header:', contentDisposition);
+      
       let filename = `application-${applicationId}-documents.zip`;
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
+        // Match filename with or without quotes, handle both formats
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+          console.log('Extracted filename:', filename);
         }
       }
+      
+      console.log('Final filename:', filename);
 
       // Download the file
       const blob = await response.blob();
