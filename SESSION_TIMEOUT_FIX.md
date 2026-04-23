@@ -1,50 +1,105 @@
-# Session Timeout Fix
+# Session Management - Simplified Approach
 
-## Problem
-After the site was idle for a couple of hours, navigating to a different page would get stuck in loading state. This was caused by expired authentication tokens and hanging refresh operations.
+## Overview
+Simplified session management with a straightforward 2-hour inactivity timeout. No complex token refresh logic, no proactive refreshes, just clean and simple.
 
-## Root Causes
-1. **Expired tokens**: Supabase tokens expire after 1 hour, and after 2+ hours of inactivity, the refresh token would also be stale
-2. **Long timeouts**: Token refresh operations had 10-30 second timeouts, causing the UI to hang
-3. **No expiration checks**: The app didn't check if tokens were already expired before using them
-4. **Race conditions**: Multiple components could trigger token refresh simultaneously
-5. **No visibility handling**: When users returned to the tab after hours, the app didn't validate the session
+## How It Works
 
-## Solutions Implemented
+### User Login
+1. User logs in with email/password (and 2FA if required)
+2. Supabase creates a session
+3. Session is stored in localStorage
+4. User is redirected to dashboard
 
-### 1. Improved Token Expiration Handling (`frontend/src/lib/api.ts`)
-- Added explicit check for already-expired tokens before attempting to use them
-- Reduced session fetch timeout from 5s to 3s for faster failure detection
-- Added check for expired sessions immediately after fetching from Supabase
-- Implemented refresh promise deduplication to prevent multiple simultaneous refresh attempts
+### Session Monitoring
+1. **Inactivity Timer**: Starts when user logs in
+2. **Activity Detection**: Monitors user interactions (mouse, keyboard, touch, scroll)
+3. **Timer Reset**: Any user activity resets the 2-hour countdown
+4. **Auto Logout**: After 2 hours of no activity, user is automatically logged out
 
-### 2. Faster Timeouts (`frontend/src/lib/api.ts`)
-- Reduced token refresh timeout from 10s to 5s
-- Reduced API request timeout from 30s to 15s
-- Reduced retry request timeout from 60s to 15s
-- These shorter timeouts prevent the UI from hanging and provide faster feedback
+### Session Timeout
+- **Duration**: 2 hours of inactivity
+- **What counts as activity**: 
+  - Mouse movement
+  - Mouse clicks
+  - Keyboard input
+  - Scrolling
+  - Touch events
 
-### 3. Session Validation on Tab Visibility (`frontend/src/contexts/AuthContext.tsx`)
-- Added `visibilitychange` event listener to validate session when user returns to tab
-- Automatically refreshes expired sessions when tab becomes visible
-- Clears user state if session is invalid, prompting re-login
+### Logout Process
+1. Call Supabase signOut with global scope
+2. Clear user state
+3. Clear all localStorage and sessionStorage
+4. Redirect to login page
 
-### 4. Improved Proactive Refresh (`frontend/src/contexts/AuthContext.tsx`)
-- Changed refresh interval from 50 minutes to 45 minutes for better safety margin
-- Added timeout protection to prevent hanging refresh operations
-- Better error handling for refresh failures
+## Implementation Details
 
-### 5. Global Fetch Timeout (`frontend/src/lib/supabase.ts`)
-- Added 10-second timeout to all Supabase client requests
-- Prevents hanging connections at the Supabase SDK level
+### AuthContext (`frontend/src/contexts/AuthContext.tsx`)
+- Simple state management: `user`, `loading`
+- Inactivity timer that resets on user activity
+- Clean signOut function
+- No complex token refresh logic
+- No visibility change handlers
+- No proactive refresh intervals
 
-## Testing Recommendations
-1. Leave the site idle for 2+ hours, then try navigating to different pages
-2. Close the browser tab for 2+ hours, reopen, and try to use the app
-3. Test with network throttling to simulate slow connections
-4. Monitor browser console for timeout messages and session refresh logs
+### Auth Library (`frontend/src/lib/auth.ts`)
+- `getCurrentUser()`: Simple session check with 5-second timeout
+- `getUserDetails()`: Fetch user data from database
+- No complex error handling or retry logic
+- Returns `null` on any error
 
-## Expected Behavior
-- If session is expired and can be refreshed: Automatic refresh, seamless navigation
-- If session is expired and cannot be refreshed: Quick redirect to login page (within 5-15 seconds)
-- No more indefinite loading states
+### API Layer (`frontend/src/lib/api.ts`)
+- `getAccessToken()`: Simple session fetch
+- `apiRequest()`: Standard fetch with auth header
+- No token refresh logic
+- No retry mechanisms
+- No complex timeout handling
+
+### Supabase Client (`frontend/src/lib/supabase.ts`)
+- Single client instance
+- `autoRefreshToken: true` - Supabase handles token refresh automatically
+- Simple configuration
+- No custom fetch wrapper
+- No session caching
+
+## Removed Components
+
+- **TokenRefreshProvider**: Removed - was conflicting with Supabase's built-in refresh
+- **tokenRefresh.ts**: No longer needed - Supabase handles this internally
+
+## Benefits
+
+1. **Simple**: Easy to understand and maintain
+2. **Predictable**: Clear 2-hour timeout, no surprises
+3. **Fast**: No hanging requests or complex retry logic
+4. **Reliable**: Fewer moving parts = fewer bugs
+5. **User-Friendly**: Activity-based timeout feels natural
+
+## User Experience
+
+- **Active users**: Never logged out (activity resets timer)
+- **Inactive users**: Logged out after 2 hours
+- **First visit**: Fast loading, no hanging
+- **Returning users**: Quick session check
+- **Logout**: Clean and complete
+
+## Testing
+
+1. Log in and use the system normally - should stay logged in
+2. Log in and leave idle for 2 hours - should auto logout
+3. Log in, leave for 1.5 hours, move mouse - timer resets, stays logged in
+4. First visit (no session) - should load quickly and show login page
+5. Manual logout - should clear everything and redirect
+
+## Configuration
+
+To change the inactivity timeout, edit `INACTIVITY_TIMEOUT` in `AuthContext.tsx`:
+
+```typescript
+const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+```
+
+Examples:
+- 1 hour: `1 * 60 * 60 * 1000`
+- 30 minutes: `30 * 60 * 1000`
+- 4 hours: `4 * 60 * 60 * 1000`

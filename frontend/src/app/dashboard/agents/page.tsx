@@ -22,7 +22,7 @@ export default function AgentsPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'Agent'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'CBA' | 'Organic'>('all');
   const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
   
   const toast = useToast();
@@ -56,7 +56,7 @@ export default function AgentsPage() {
 
     // Role filter
     if (roleFilter !== 'all') {
-      if (roleFilter === 'Agent') {
+      if (roleFilter === 'CBA') {
         filtered = filtered.filter(agent => !agent.role);
       } else {
         filtered = filtered.filter(agent => agent.role === roleFilter);
@@ -280,12 +280,13 @@ export default function AgentsPage() {
             </label>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'Team Leader' | 'Agent')}
+              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'Team Leader' | 'CBA' | 'Organic')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00A191] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="all">All Roles</option>
               <option value="Team Leader">Team Leader</option>
-              <option value="Agent">Agent</option>
+              <option value="CBA">CBA</option>
+              <option value="Organic">Organic</option>
             </select>
           </div>
 
@@ -382,7 +383,7 @@ export default function AgentsPage() {
                       </span>
                     ) : (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                        Agent
+                        CBA
                       </span>
                     )}
                   </td>
@@ -494,7 +495,7 @@ export default function AgentsPage() {
                     </span>
                   ) : (
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                      Agent
+                      CBA
                     </span>
                   )}
                 </div>
@@ -728,8 +729,9 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
               }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#80CBC4] bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">Agent</option>
+              <option value="">CBA</option>
               <option value="Team Leader">Team Leader</option>
+              <option value="Organic">Organic</option>
             </select>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select a role for this agent</p>
           </div>

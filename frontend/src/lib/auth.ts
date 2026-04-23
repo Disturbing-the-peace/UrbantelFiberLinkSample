@@ -79,65 +79,72 @@ export const signOut = async (): Promise<{ error: AuthError | null }> => {
  */
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    console.log('getCurrentUser: Checking auth session...');
     const supabase = getSupabaseClient();
     
-    // First check if there's a valid session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Get session with timeout
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Session check timeout')), 5000)
+    );
     
-    console.log('getCurrentUser: Session check:', { 
-      hasSession: !!session, 
-      error: sessionError 
-    });
+    const result = await Promise.race([
+      sessionPromise,
+      timeoutPromise
+    ]).catch((err) => {
+      console.error('[getCurrentUser] Session fetch failed:', err);
+      return { data: { session: null }, error: err };
+    }) as any;
     
-    // Handle refresh token errors gracefully (expected after logout)
+    const { data: { session }, error: sessionError } = result;
+    
     if (sessionError) {
-      if (sessionError.message?.includes('Refresh Token') || sessionError.message?.includes('Invalid')) {
-        console.log('getCurrentUser: No valid refresh token (expected after logout)');
-        return null;
-      }
-      console.error('getCurrentUser: Session error:', sessionError);
+      console.error('[getCurrentUser] Session error:', sessionError);
       return null;
     }
     
     if (!session) {
-      console.log('getCurrentUser: No valid session found');
+      console.log('[getCurrentUser] No session found');
       return null;
     }
     
-    // Then get the user from the session
-    const {
-      data: { user },
-      error: userError
-    } = await supabase.auth.getUser();
-
-    console.log('getCurrentUser: Auth user:', user, 'error:', userError);
-
+    // Get user from session
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
     if (userError) {
-      if (userError.message?.includes('Refresh Token') || userError.message?.includes('Invalid')) {
-        console.log('getCurrentUser: Invalid user token (expected after logout)');
-        return null;
-      }
-      console.error('getCurrentUser: User error:', userError);
+      console.error('[getCurrentUser] User error:', userError);
       return null;
     }
     
     if (!user) {
-      console.log('getCurrentUser: No auth user found');
+      console.log('[getCurrentUser] No user found');
       return null;
     }
 
-    console.log('getCurrentUser: Fetching user details for ID:', user.id);
-    const userDetails = await getUserDetails(user.id);
-    console.log('getCurrentUser: User details:', userDetails);
-    return userDetails;
-  } catch (error: any) {
-    // Suppress refresh token errors (expected after logout)
-    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-      console.log('getCurrentUser: Invalid token (expected after logout)');
+    console.log('[getCurrentUser] Fetching user details for:', user.id);
+    
+    // Get user details from database with timeout
+    const detailsPromise = getUserDetails(user.id);
+    const detailsTimeoutPromise = new Promise<null>((_, reject) => 
+      setTimeout(() => reject(new Error('User details timeout')), 5000)
+    );
+    
+    const userDetails = await Promise.race([
+      detailsPromise,
+      detailsTimeoutPromise
+    ]).catch((err) => {
+      console.error('[getCurrentUser] User details fetch failed:', err);
+      return null;
+    });
+    
+    if (!userDetails) {
+      console.error('[getCurrentUser] Failed to get user details');
       return null;
     }
-    console.error('Error getting current user:', error);
+    
+    console.log('[getCurrentUser] Successfully fetched user:', userDetails.email);
+    return userDetails;
+  } catch (error) {
+    console.error('[getCurrentUser] Unexpected error:', error);
     return null;
   }
 };
@@ -147,23 +154,27 @@ export const getCurrentUser = async (): Promise<User | null> => {
  */
 export const getUserDetails = async (userId: string): Promise<User | null> => {
   try {
-    console.log('getUserDetails: Fetching for user ID:', userId);
+    console.log('[getUserDetails] Fetching for user ID:', userId);
     const supabase = getSupabaseClient();
     
-    // Try to get all fields, but handle missing ones gracefully
     const { data, error } = await supabase
       .from('user_auth_status')
       .select('*')
       .eq('id', userId)
       .single();
 
-    console.log('getUserDetails: Query result - data:', data, 'error:', error);
-
-    if (error || !data) {
-      console.error('Error fetching user details:', error);
+    if (error) {
+      console.error('[getUserDetails] Database error:', error);
+      return null;
+    }
+    
+    if (!data) {
+      console.error('[getUserDetails] No data returned');
       return null;
     }
 
+    console.log('[getUserDetails] Successfully fetched user data');
+    
     return {
       id: data.id,
       email: data.email,
@@ -173,14 +184,14 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
       isActive: data.is_active,
       requires2FA: data.requires_2fa,
       profile_picture_url: data.profile_picture_url,
-      is_first_login: data.is_first_login ?? false, // Default to false if missing
-      onboarding_completed: data.onboarding_completed ?? true, // Default to true if missing
+      is_first_login: data.is_first_login ?? false,
+      onboarding_completed: data.onboarding_completed ?? true,
       password_changed_at: data.password_changed_at,
       last_login_at: data.last_login_at,
       created_at: data.created_at,
     };
   } catch (error) {
-    console.error('Error fetching user details:', error);
+    console.error('[getUserDetails] Unexpected error:', error);
     return null;
   }
 };

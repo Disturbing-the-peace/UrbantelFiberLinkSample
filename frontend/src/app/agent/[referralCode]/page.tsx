@@ -421,9 +421,13 @@ export default function AgentPortalPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Independent Team Leader
                   </p>
+                ) : agent.role === 'Organic' ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Organic Agent
+                  </p>
                 ) : (
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Independent Agent
+                    Independent CBA
                   </p>
                 )}
               </div>

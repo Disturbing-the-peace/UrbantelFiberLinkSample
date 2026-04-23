@@ -125,10 +125,14 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
   try {
     const { id } = req.params;
 
-    // Verify application exists (not just activated subscribers)
+    // Verify application exists and get full details
     const { data: application, error: appError } = await supabase
       .from('applications')
-      .select('id, first_name, last_name, status, house_photo_url, government_id_url, id_selfie_url, signature_url')
+      .select(`
+        *,
+        agent:agents(name, referral_code),
+        plan:plans(name, speed, price)
+      `)
       .eq('id', id)
       .single();
 
@@ -148,9 +152,66 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
       return res.status(404).json({ error: 'No documents found for this application' });
     }
 
+    // Create subscriber information text content
+    const subscriberInfo = `
+SUBSCRIBER INFORMATION
+======================
+
+Personal Information:
+--------------------
+Name: ${application.first_name} ${application.middle_name || ''} ${application.last_name}
+Date of Birth: ${application.date_of_birth || 'N/A'}
+Contact Number: ${application.contact_number || 'N/A'}
+Email: ${application.email || 'N/A'}
+
+Address:
+--------
+${application.address || 'N/A'}
+Barangay: ${application.barangay || 'N/A'}
+City: ${application.city || 'N/A'}
+Province: ${application.province || 'N/A'}
+Zip Code: ${application.zip_code || 'N/A'}
+
+Installation Address:
+--------------------
+${application.installation_address || 'Same as above'}
+
+Plan Information:
+----------------
+Plan: ${application.plan?.name || 'N/A'}
+Speed: ${application.plan?.speed || 'N/A'}
+Price: ₱${application.plan?.price || 'N/A'}
+
+Agent Information:
+-----------------
+Agent Name: ${application.agent?.name || 'N/A'}
+Referral Code: ${application.agent?.referral_code || 'N/A'}
+
+Application Details:
+-------------------
+Application ID: ${application.id}
+Status: ${application.status}
+Submitted: ${application.created_at ? new Date(application.created_at).toLocaleString() : 'N/A'}
+${application.date_activated ? `Activated: ${new Date(application.date_activated).toLocaleString()}` : ''}
+${application.status_reason ? `Status Reason: ${application.status_reason}` : ''}
+
+Additional Notes:
+----------------
+${application.notes || 'None'}
+
+---
+Generated: ${new Date().toLocaleString()}
+`.trim();
+
+    // Create a safe filename from applicant name (remove special characters)
+    const safeName = `${application.first_name}_${application.last_name}`
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .replace(/_+/g, '_')
+      .toLowerCase();
+
     // Set response headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="application_${id}_documents.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}_documents.zip"`);
 
     // Create ZIP archive
     const archive = archiver('zip', {
@@ -167,6 +228,9 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
 
     // Pipe archive to response
     archive.pipe(res);
+
+    // Add subscriber information text file first
+    archive.append(subscriberInfo, { name: 'subscriber_info.txt' });
 
     // Download and add each document to the archive
     for (const doc of documentUrls) {

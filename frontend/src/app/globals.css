@@ -70,8 +70,13 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Monospace font for code blocks */
+code, pre, kbd, samp {
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
 }
 
 /* Leaflet CSS overrides */

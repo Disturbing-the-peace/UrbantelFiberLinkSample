@@ -1,10 +1,9 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, User } from '@/lib/auth';
-import { getSupabaseClient, clearCurrentSession } from '@/lib/supabase';
-import { clearCachedSession } from '@/lib/api';
+import { getSupabaseClient } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -15,41 +14,70 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 2 hours inactivity timeout
+const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const userRef = useRef<User | null>(null);
 
-  const refreshUser = async () => {
+  // Keep ref in sync with state
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const refreshUser = useCallback(async () => {
     try {
-      console.log('AuthContext: Refreshing user...');
       const currentUser = await getCurrentUser();
-      console.log('AuthContext: Refreshed user result:', currentUser);
       setUser(currentUser);
     } catch (error) {
-      console.error('Error refreshing user:', error);
       setUser(null);
     }
-  };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      const supabase = getSupabaseClient();
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      setUser(null);
+      
+      // Clear all storage
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      
+      // Redirect to login
+      window.location.replace('/login?logout=success');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Force cleanup even on error
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      window.location.replace('/login?logout=success');
+    }
+  }, []);
 
   useEffect(() => {
-    // Check initial session
+    // Initialize auth
     const initAuth = async () => {
-      console.log('AuthContext: Initializing auth...');
+      console.log('[AuthContext] Initializing auth...');
       try {
         const currentUser = await getCurrentUser();
-        console.log('AuthContext: Current user:', currentUser);
+        console.log('[AuthContext] Initial user:', currentUser);
         setUser(currentUser);
-      } catch (error: any) {
-        console.error('Error initializing auth:', error);
-        // If it's a refresh token error, it means we're logged out - this is expected
-        if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-          console.log('AuthContext: No valid session found (expected after logout)');
-        }
+      } catch (error) {
+        console.error('[AuthContext] Error initializing auth:', error);
         setUser(null);
       } finally {
         setLoading(false);
-        console.log('AuthContext: Loading complete');
+        console.log('[AuthContext] Loading complete');
       }
     };
 
@@ -58,198 +86,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseClient();
     
     // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthContext: Auth state changed:', event, 'Session:', !!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthContext] Auth state change:', event, 'Has session:', !!session);
+      
       if (event === 'SIGNED_IN' && session) {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } else if (event === 'SIGNED_OUT' || !session) {
-        console.log('AuthContext: User signed out, clearing state');
+        // Only fetch user if we don't already have one
+        // This prevents refetching on token refresh
+        if (!userRef.current) {
+          console.log('[AuthContext] User signed in, fetching user details');
+          const currentUser = await getCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+          } else {
+            console.error('[AuthContext] Failed to fetch user after SIGNED_IN');
+          }
+        } else {
+          console.log('[AuthContext] User already exists, skipping fetch');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] User explicitly signed out');
         setUser(null);
-        // Don't redirect here as signOut function handles it
-      } else if (event === 'TOKEN_REFRESHED' && session) {
-        console.log('AuthContext: Token refreshed successfully');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('[AuthContext] Token refreshed, keeping current user');
+        // Don't change user state on token refresh
+      } else if (event === 'USER_UPDATED' && session) {
+        console.log('[AuthContext] User updated, refetching');
         const currentUser = await getCurrentUser();
-        setUser(currentUser);
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      } else {
+        console.log('[AuthContext] Other auth event, ignoring:', event);
       }
     });
 
-    // Proactive token refresh - refresh every 45 minutes (before 60-minute expiration)
-    const refreshInterval = setInterval(async () => {
-      console.log('AuthContext: Proactively refreshing token...');
-      try {
-        const supabase = getSupabaseClient();
-        
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise<any>((_, reject) => 
-          setTimeout(() => reject(new Error('Refresh timeout')), 5000)
-        );
-        
-        const refreshPromise = supabase.auth.refreshSession();
-        
-        const { data, error } = await Promise.race([refreshPromise, timeoutPromise])
-          .catch((err) => {
-            console.error('AuthContext: Refresh timed out or failed:', err);
-            return { data: { session: null }, error: err };
-          }) as any;
-          
-        if (error) {
-          console.error('AuthContext: Token refresh failed:', error);
-          // If refresh fails with invalid token, user is logged out
-          if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
-            console.log('AuthContext: Invalid refresh token, clearing user state');
-            setUser(null);
-          }
-        } else if (data.session) {
-          console.log('AuthContext: Token refreshed proactively');
-          const currentUser = await getCurrentUser();
-          setUser(currentUser);
-        }
-      } catch (error: any) {
-        console.error('AuthContext: Error during proactive refresh:', error);
-        // If refresh fails, assume logged out
-        if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-          setUser(null);
-        }
-      }
-    }, 45 * 60 * 1000); // 45 minutes
-
-    // Session validation on visibility change (when user returns to tab)
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        console.log('AuthContext: Tab became visible, validating session...');
-        try {
-          const supabase = getSupabaseClient();
-          
-          // Quick session check with timeout
-          const timeoutPromise = new Promise<any>((_, reject) => 
-            setTimeout(() => reject(new Error('Session check timeout')), 3000)
-          );
-          
-          const sessionPromise = supabase.auth.getSession();
-          
-          const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise])
-            .catch((err) => {
-              console.error('AuthContext: Session check failed:', err);
-              return { data: { session: null }, error: err };
-            }) as any;
-          
-          if (error || !session) {
-            console.log('AuthContext: No valid session found on visibility change');
-            setUser(null);
-          } else {
-            // Check if session is expired
-            if (session.expires_at && session.expires_at * 1000 <= Date.now()) {
-              console.log('AuthContext: Session expired, refreshing...');
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-              if (refreshError || !refreshData.session) {
-                console.log('AuthContext: Refresh failed, clearing user');
-                setUser(null);
-              } else {
-                console.log('AuthContext: Session refreshed on visibility change');
-                const currentUser = await getCurrentUser();
-                setUser(currentUser);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('AuthContext: Error validating session:', error);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [router]);
+  }, []);
 
-  const signOut = async () => {
-    try {
-      console.log('AuthContext: Signing out...');
-      
-      // Get the Supabase client
-      console.log('AuthContext: Getting Supabase client...');
-      const supabase = getSupabaseClient();
-      
-      // Sign out with global scope FIRST (this clears Supabase's internal storage)
-      console.log('AuthContext: Calling supabase.auth.signOut()...');
-      const signOutPromise = supabase.auth.signOut({ scope: 'global' });
-      
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('SignOut timeout')), 5000)
-      );
-      
-      const { error } = await Promise.race([signOutPromise, timeoutPromise])
-        .catch((err) => {
-          console.error('SignOut timed out or failed:', err);
-          return { error: err };
-        }) as any;
-        
-      if (error) {
-        console.error('Sign out error:', error);
-      } else {
-        console.log('AuthContext: SignOut successful');
+  // Inactivity timeout - auto logout after 2 hours of inactivity
+  useEffect(() => {
+    if (!user) return;
+
+    let inactivityTimer: NodeJS.Timeout;
+
+    const resetInactivityTimer = () => {
+      // Clear existing timer
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
       }
-      
-      // Clear user state
-      console.log('AuthContext: Clearing user state...');
-      setUser(null);
-      
-      // Clear in-memory session
-      console.log('AuthContext: Clearing in-memory session...');
-      clearCurrentSession();
-      
-      // Clear any cached data
-      console.log('AuthContext: Clearing cached session...');
-      clearCachedSession();
-      
-      // Clear all browser storage thoroughly
-      if (typeof window !== 'undefined') {
-        console.log('AuthContext: Clearing browser storage...');
-        // Get all localStorage keys
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key) {
-            keysToRemove.push(key);
-          }
-        }
-        
-        // Remove all keys
-        keysToRemove.forEach(key => {
-          localStorage.removeItem(key);
-        });
-        
-        // Clear sessionStorage
-        sessionStorage.clear();
-        
-        console.log('AuthContext: All storage cleared');
+
+      // Set new timer for 2 hours
+      inactivityTimer = setTimeout(() => {
+        console.log('Session expired due to inactivity');
+        signOut();
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    // Events that indicate user activity
+    const activityEvents = [
+      'mousedown',
+      'mousemove',
+      'keypress',
+      'scroll',
+      'touchstart',
+      'click',
+    ];
+
+    // Reset timer on any user activity
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetInactivityTimer);
+    });
+
+    // Start the initial timer
+    resetInactivityTimer();
+
+    // Cleanup
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
       }
-      
-      console.log('AuthContext: Redirecting to login...');
-      
-      // Force complete page reload to clear all state
-      window.location.replace('/login?logout=success');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      // Still clear everything and redirect
-      console.log('AuthContext: Error occurred, forcing cleanup and redirect...');
-      setUser(null);
-      clearCurrentSession();
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        sessionStorage.clear();
-      }
-      window.location.replace('/login?logout=success');
-    }
-  };
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, resetInactivityTimer);
+      });
+    };
+  }, [user, signOut]);
 
   return (
     <AuthContext.Provider value={{ user, loading, signOut, refreshUser }}>

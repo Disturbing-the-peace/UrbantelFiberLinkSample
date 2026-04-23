@@ -1,6 +1,5 @@
-import { getSupabaseClient, getCurrentSession } from './supabase';
+import { getSupabaseClient } from './supabase';
 import { cachedFetch, dataCache, getMillisecondsUntilMidnight } from './cache';
-import { markRequestSuccess, resetIfStale } from './connectionHealth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.56:5000';
 
@@ -8,206 +7,24 @@ interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
 }
 
-// Track failed requests to detect stale connections
-let consecutiveFailures = 0;
-const MAX_FAILURES_BEFORE_RESET = 2;
-
-// Track ongoing refresh to prevent multiple simultaneous refreshes
-let refreshPromise: Promise<string | null> | null = null;
-
 /**
- * Get the current Supabase access token (synchronous from memory)
- * Automatically refreshes if token is about to expire (within 5 minutes)
+ * Get the current Supabase access token
  */
 export async function getAccessToken(): Promise<string | null> {
   try {
-    // Check if connection is stale and reset if needed
-    resetIfStale();
-    
     const supabase = getSupabaseClient();
-    
-    // First, try to get from memory (instant)
-    const session = getCurrentSession();
-    
-    // Check if token has already expired or is about to expire (within 5 minutes)
-    if (session?.access_token && session?.expires_at) {
-      const expiresAt = session.expires_at * 1000; // Convert to milliseconds
-      const now = Date.now();
-      const fiveMinutes = 5 * 60 * 1000;
-      
-      // If token has already expired, force refresh
-      if (expiresAt <= now) {
-        console.log('Token has expired, refreshing...');
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          consecutiveFailures = 0;
-          return newToken;
-        }
-        // If refresh fails, session is invalid
-        console.error('Token expired and refresh failed');
-        return null;
-      }
-      
-      // If token expires in less than 5 minutes, refresh it proactively
-      if (expiresAt - now < fiveMinutes) {
-        console.log('Token expiring soon, refreshing proactively...');
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          consecutiveFailures = 0;
-          return newToken;
-        }
-        // If refresh fails, try to use the current token anyway
-        console.warn('Token refresh failed, using current token');
-      }
-      
-      console.log('Using session from memory');
-      return session.access_token;
-    }
-
-    // If not in memory, try to get from Supabase with shorter timeout
-    console.log('Session not in memory, fetching from Supabase...');
-    
-    const timeoutPromise = new Promise<null>((_, reject) => 
-      setTimeout(() => reject(new Error('Session fetch timeout')), 3000)
-    );
-    
-    const sessionPromise = supabase.auth.getSession();
-    
-    const { data: { session: freshSession }, error } = await Promise.race([
-      sessionPromise,
-      timeoutPromise
-    ]).catch((err) => {
-      // Suppress refresh token errors (expected after logout)
-      if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
-        console.log('getAccessToken: No valid refresh token (expected after logout)');
-        return { data: { session: null }, error: null };
-      }
-      console.error('Session fetch timed out or failed:', err);
-      consecutiveFailures++;
-      return { data: { session: null }, error: err };
-    }) as any;
-    
-    if (error) {
-      // Suppress refresh token errors
-      if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
-        console.log('getAccessToken: Invalid refresh token (expected after logout)');
-        return null;
-      }
-      console.error('Error getting session:', error);
-      return null;
-    }
-    
-    if (!freshSession) {
-      console.log('getAccessToken: No session found');
-      return null;
-    }
-    
-    // Check if the fetched session is already expired
-    if (freshSession.expires_at && freshSession.expires_at * 1000 <= Date.now()) {
-      console.log('Fetched session is already expired, refreshing...');
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        consecutiveFailures = 0;
-        return newToken;
-      }
-      return null;
-    }
-    
-    consecutiveFailures = 0; // Reset on success
-    return freshSession.access_token;
-  } catch (error: any) {
-    // Suppress refresh token errors
-    if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-      console.log('getAccessToken: Invalid token (expected after logout)');
-      return null;
-    }
-    console.error('Error in getAccessToken:', error);
-    consecutiveFailures++;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
     return null;
   }
-}
-
-/**
- * Refresh the session and get a new token
- * Prevents multiple simultaneous refresh attempts
- */
-export async function refreshAccessToken(): Promise<string | null> {
-  // If a refresh is already in progress, wait for it
-  if (refreshPromise) {
-    console.log('Refresh already in progress, waiting...');
-    return refreshPromise;
-  }
-
-  // Start a new refresh
-  refreshPromise = (async () => {
-    try {
-      console.log('Refreshing session...');
-      const supabase = getSupabaseClient();
-      
-      // Add shorter timeout to refresh operation (5 seconds)
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Refresh timeout')), 5000)
-      );
-      
-      const refreshOp = supabase.auth.refreshSession();
-      
-      const { data: { session }, error } = await Promise.race([
-        refreshOp,
-        timeoutPromise
-      ]).catch((err) => {
-        // Suppress refresh token errors (expected after logout)
-        if (err?.message?.includes('Refresh Token') || err?.message?.includes('Invalid')) {
-          console.log('refreshAccessToken: No valid refresh token (expected after logout)');
-          return { data: { session: null }, error: null };
-        }
-        console.error('Refresh timed out:', err);
-        consecutiveFailures++;
-        return { data: { session: null }, error: err };
-      }) as any;
-      
-      if (error) {
-        // Suppress refresh token errors
-        if (error.message?.includes('Refresh Token') || error.message?.includes('Invalid')) {
-          console.log('refreshAccessToken: Invalid refresh token (expected after logout)');
-          return null;
-        }
-        console.error('Error refreshing session:', error);
-        consecutiveFailures++;
-        return null;
-      }
-      
-      if (!session) {
-        console.log('refreshAccessToken: No session after refresh');
-        return null;
-      }
-      
-      console.log('Session refreshed successfully');
-      consecutiveFailures = 0; // Reset on success
-      return session.access_token;
-    } catch (error: any) {
-      // Suppress refresh token errors
-      if (error?.message?.includes('Refresh Token') || error?.message?.includes('Invalid')) {
-        console.log('refreshAccessToken: Invalid token (expected after logout)');
-        return null;
-      }
-      console.error('Error in refreshAccessToken:', error);
-      consecutiveFailures++;
-      return null;
-    } finally {
-      // Clear the promise after completion
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
 }
 
 /**
  * Clear the cached session (call this on logout)
  */
 export function clearCachedSession() {
-  // This is now handled by the auth state listener in supabase.ts
-  console.log('Session will be cleared by auth state listener');
+  console.log('Clearing cached session');
 }
 /**
  * Make an authenticated API request
@@ -233,81 +50,17 @@ export async function apiRequest<T>(
     }
   }
 
-  // Add timeout to prevent hanging requests (15 seconds for initial request)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    console.warn(`Request to ${endpoint} timed out after 15s`);
-    controller.abort();
-  }, 15000); // 15 second timeout
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...restOptions,
+    headers: requestHeaders,
+  });
 
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...restOptions,
-      headers: requestHeaders,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-    consecutiveFailures = 0; // Reset on successful request
-    markRequestSuccess(); // Mark connection as healthy
-
-    // If 401, try to refresh token and retry once
-    if (response.status === 401 && requiresAuth) {
-      console.log('Got 401, attempting to refresh token...');
-      const newToken = await refreshAccessToken();
-      
-      if (newToken) {
-        console.log('Token refreshed, retrying request...');
-        requestHeaders['Authorization'] = `Bearer ${newToken}`;
-        
-        const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(() => {
-          console.warn(`Retry request to ${endpoint} timed out after 15s`);
-          retryController.abort();
-        }, 15000); // 15 second timeout for retry
-        
-        try {
-          const retryResponse = await fetch(`${API_URL}${endpoint}`, {
-            ...restOptions,
-            headers: requestHeaders,
-            signal: retryController.signal,
-          });
-          
-          clearTimeout(retryTimeoutId);
-          
-          if (!retryResponse.ok) {
-            const error = await retryResponse.json().catch(() => ({ error: 'Request failed' }));
-            throw new Error(error.error || `HTTP ${retryResponse.status}: ${retryResponse.statusText}`);
-          }
-          
-          return retryResponse.json();
-        } catch (retryError: any) {
-          clearTimeout(retryTimeoutId);
-          if (retryError.name === 'AbortError') {
-            throw new Error('Request timeout - please check if the backend server is running');
-          }
-          throw retryError;
-        }
-      } else {
-        throw new Error('Session expired. Please log in again.');
-      }
-    }
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return response.json();
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    consecutiveFailures++;
-    
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout - please check your connection or try refreshing the page');
-    }
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
   }
+
+  return response.json();
 }
 
 /**
