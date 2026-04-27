@@ -86,9 +86,11 @@ export default function UserMenu() {
                   {getDisplayName(user.email)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 rounded-full capitalize">
-                  {user.role}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="inline-block px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 rounded-full capitalize">
+                    {user.role}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

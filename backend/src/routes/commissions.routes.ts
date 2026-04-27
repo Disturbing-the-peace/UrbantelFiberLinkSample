@@ -29,7 +29,8 @@ export async function createCommissionForActivation(
   agentId: string,
   subscriberId: string,
   planPrice: number,
-  activatedAt: string
+  activatedAt: string,
+  branchId: string
 ): Promise<Commission | null> {
   try {
     const commissionAmount = calculateCommission(planPrice);
@@ -42,6 +43,7 @@ export async function createCommissionForActivation(
         amount: commissionAmount,
         status: 'Pending',
         date_activated: activatedAt,
+        branch_id: branchId,
       })
       .select()
       .single();
@@ -61,20 +63,30 @@ export async function createCommissionForActivation(
 /**
  * GET /api/commissions
  * List all commissions with optional filtering
- * Query params: agent_id, status
+ * Query params: agent_id, status, branch_id
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { agent_id, status } = req.query;
+    const { agent_id, status, branch_id } = req.query;
 
     let query = supabase
       .from('commissions')
       .select(`
         *,
         agents:agent_id (id, name, referral_code),
-        applications:subscriber_id (id, first_name, last_name, plans:plan_id (id, name, category, speed, price))
+        applications:subscriber_id (id, first_name, last_name, plans:plan_id (id, name, category, speed, price)),
+        branches:branch_id (id, name)
       `)
       .order('date_activated', { ascending: false });
+
+    // Branch filtering: admins see only their branch, superadmins can filter or see all
+    if (req.user!.role === 'admin') {
+      query = query.eq('branch_id', req.user!.branch_id);
+    } else if (branch_id && typeof branch_id === 'string') {
+      // Superadmin filtering by specific branch
+      query = query.eq('branch_id', branch_id);
+    }
 
     // Filter by agent
     if (agent_id && typeof agent_id === 'string') {

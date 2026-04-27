@@ -11,7 +11,7 @@ const router = Router();
  */
 router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
-    const { email, full_name, role, password } = req.body;
+    const { email, full_name, role, password, branch_id } = req.body;
 
     // Validate required fields
     if (!email || !email.trim()) {
@@ -25,6 +25,9 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
     }
     if (!password || password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    if (!branch_id) {
+      return res.status(400).json({ error: 'Branch is required' });
     }
 
     // Create user in Supabase Auth
@@ -47,6 +50,7 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
         email: email.trim(),
         full_name: full_name.trim(),
         role: role,
+        branch_id: branch_id,
         is_active: true,
       })
       .select()
@@ -72,11 +76,11 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
  */
 router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
-    const { is_active, role } = req.query;
+    const { is_active, role, branch_id } = req.query;
 
     let query = supabase
       .from('users')
-      .select('*')
+      .select('*, branches:branch_id (id, name)')
       .order('created_at', { ascending: false });
 
     // Filter by active status if provided
@@ -87,6 +91,11 @@ router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response
     // Filter by role if provided
     if (role && ['admin', 'superadmin'].includes(role as string)) {
       query = query.eq('role', role);
+    }
+
+    // Filter by branch if provided
+    if (branch_id && typeof branch_id === 'string') {
+      query = query.eq('branch_id', branch_id);
     }
 
     const { data: users, error } = await query;
@@ -135,7 +144,7 @@ router.get('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
 router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { full_name, role, is_active, email } = req.body;
+    const { full_name, role, is_active, email, branch_id } = req.body;
 
     // Check if user exists
     const { data: existing, error: fetchError } = await supabase
@@ -160,6 +169,7 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
       updates.role = role;
     }
     if (is_active !== undefined) updates.is_active = is_active;
+    if (branch_id !== undefined) updates.branch_id = branch_id;
 
     // Validate at least one field to update
     if (Object.keys(updates).length === 0) {

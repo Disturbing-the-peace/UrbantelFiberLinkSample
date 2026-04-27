@@ -21,7 +21,8 @@ import {
   Trash2, 
   Settings,
   Calendar,
-  Globe
+  Globe,
+  Building2
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -90,6 +91,7 @@ export default function DashboardLayout({
   ];
 
   const adminNavigation = user?.role === 'superadmin' ? [
+    { name: 'Branches', href: '/dashboard/branches', icon: Building2 },
     { name: 'Purge Logs', href: '/dashboard/purge-logs', icon: Trash2 },
     { name: 'Users', href: '/dashboard/users', icon: Settings },
   ] : [];
@@ -167,8 +169,8 @@ export default function DashboardLayout({
 
         {/* Main Content - with left margin to account for fixed sidebar */}
         <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarExpanded ? 'lg:ml-64' : 'lg:ml-20'}`}>
-          {/* Top Bar */}
-          <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 transition-colors duration-300">
+          {/* Top Bar - Fixed/Sticky */}
+          <header className="sticky top-0 z-40 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 transition-colors duration-300 shadow-sm">
             <div className="flex items-center gap-4">
               {/* Mobile Menu Button */}
               <button
@@ -192,6 +194,14 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Branch Badge */}
+              {user?.branch_name && (
+                <div className="hidden sm:flex items-center px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    {user.branch_name}
+                  </span>
+                </div>
+              )}
               <ThemeToggle variant="subtle" />
               <UserMenu />
             </div>

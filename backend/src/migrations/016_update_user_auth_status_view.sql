@@ -11,6 +11,7 @@ SELECT
   u.role,
   u.full_name,
   u.is_active,
+  u.branch_id,
   u.profile_picture_url,
   u.is_first_login,
   u.onboarding_completed,

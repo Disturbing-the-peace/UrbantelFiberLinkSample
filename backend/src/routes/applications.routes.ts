@@ -29,20 +29,30 @@ const STATUSES_REQUIRING_REASON = ['Denied', 'Voided'];
 /**
  * GET /api/applications
  * List all applications with optional filtering
- * Query params: status, agent_id, start_date, end_date
+ * Query params: status, agent_id, start_date, end_date, branch_id
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { status, agent_id, start_date, end_date } = req.query;
+    const { status, agent_id, start_date, end_date, branch_id } = req.query;
 
     let query = supabase
       .from('applications')
       .select(`
         *,
         agents:agent_id (id, name, referral_code),
-        plans:plan_id (id, name, category, speed, price)
+        plans:plan_id (id, name, category, speed, price),
+        branches:branch_id (id, name)
       `)
       .order('created_at', { ascending: false });
+
+    // Branch filtering: admins see only their branch, superadmins can filter or see all
+    if (req.user!.role === 'admin') {
+      query = query.eq('branch_id', req.user!.branch_id);
+    } else if (branch_id && typeof branch_id === 'string') {
+      // Superadmin filtering by specific branch
+      query = query.eq('branch_id', branch_id);
+    }
 
     // Filter by status
     if (status && typeof status === 'string') {
@@ -234,7 +244,8 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
           updatedApp.agent_id,
           updatedApp.id,
           updatedApp.plans.price,
-          updatedApp.activated_at || new Date().toISOString()
+          updatedApp.activated_at || new Date().toISOString(),
+          updatedApp.branch_id
         );
 
         if (!commission) {

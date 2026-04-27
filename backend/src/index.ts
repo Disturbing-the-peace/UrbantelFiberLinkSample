@@ -16,6 +16,7 @@ import auditLogRoutes from './routes/auditLog.routes';
 import usersRoutes from './routes/users.routes';
 import documentsRoutes from './routes/documents.routes';
 import eventsRoutes from './routes/events.routes';
+import branchesRoutes from './routes/branches.routes';
 import { dataPurgeService } from './services/dataPurge.service';
 
 dotenv.config();
@@ -46,6 +47,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/branches', branchesRoutes);
 app.use('/api/agents', agentsRoutes);
 app.use('/api/plans', plansRoutes);
 app.use('/api/customers', customersRoutes);

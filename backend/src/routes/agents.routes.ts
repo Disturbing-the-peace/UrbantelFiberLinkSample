@@ -24,11 +24,23 @@ const generateReferralCode = (): string => {
  */
 router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, contact_number, email, role, team_leader_id } = req.body;
+    const { name, contact_number, email, role, team_leader_id, branch_id } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Agent name is required' });
+    }
+
+    // Use provided branch_id or default to user's branch_id
+    const agentBranchId = branch_id || req.user!.branch_id;
+
+    if (!agentBranchId) {
+      return res.status(400).json({ error: 'Branch is required' });
+    }
+
+    // Validate branch access for admins
+    if (req.user!.role === 'admin' && req.user!.branch_id !== agentBranchId) {
+      return res.status(403).json({ error: 'You can only create agents in your assigned branch' });
     }
 
     // Validate that team leaders don't have a team leader
@@ -72,6 +84,7 @@ router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) =>
         email: email?.trim() || null,
         role: role?.trim() || null,
         team_leader_id: team_leader_id || null,
+        branch_id: agentBranchId,
         is_active: true,
       })
       .select()
@@ -92,15 +105,24 @@ router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) =>
 /**
  * GET /api/agents
  * List all agents (admin and superadmin)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { is_active } = req.query;
+    const { is_active, branch_id } = req.query;
 
     let query = supabase
       .from('agents')
-      .select('*')
+      .select('*, branches:branch_id (id, name)')
       .order('created_at', { ascending: false });
+
+    // Branch filtering: admins see only their branch, superadmins can filter or see all
+    if (req.user!.role === 'admin') {
+      query = query.eq('branch_id', req.user!.branch_id);
+    } else if (branch_id && typeof branch_id === 'string') {
+      // Superadmin filtering by specific branch
+      query = query.eq('branch_id', branch_id);
+    }
 
     // Filter by active status if provided
     if (is_active !== undefined) {
@@ -231,17 +253,22 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
 router.put('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, contact_number, email, role, team_leader_id, is_active } = req.body;
+    const { name, contact_number, email, role, team_leader_id, is_active, branch_id } = req.body;
 
     // Check if agent exists
     const { data: existing, error: fetchError } = await supabase
       .from('agents')
-      .select('id')
+      .select('id, branch_id')
       .eq('id', id)
       .single();
 
     if (fetchError || !existing) {
       return res.status(404).json({ error: 'Agent not found' });
+    }
+
+    // Validate branch access for admins
+    if (req.user!.role === 'admin' && req.user!.branch_id !== existing.branch_id) {
+      return res.status(403).json({ error: 'You can only update agents in your assigned branch' });
     }
 
     // Validate that team leaders don't have a team leader
@@ -265,6 +292,11 @@ router.put('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
       updates.team_leader_id = team_leader_id || undefined;
     }
     if (is_active !== undefined) updates.is_active = is_active;
+    
+    // Only superadmins can change branch
+    if (branch_id !== undefined && req.user!.role === 'superadmin') {
+      updates.branch_id = branch_id;
+    }
 
     // Validate at least one field to update
     if (Object.keys(updates).length === 0) {

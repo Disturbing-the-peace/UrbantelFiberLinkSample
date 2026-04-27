@@ -59,7 +59,8 @@ describe('Commission Routes', () => {
         'agent-123',
         'sub-123',
         100,
-        '2024-01-01T00:00:00Z'
+        '2024-01-01T00:00:00Z',
+        'branch-123'
       );
 
       expect(result).toEqual(mockCommission);
@@ -70,6 +71,7 @@ describe('Commission Routes', () => {
         amount: 60,
         status: 'Pending',
         date_activated: '2024-01-01T00:00:00Z',
+        branch_id: 'branch-123',
       });
     });
 
@@ -92,7 +94,8 @@ describe('Commission Routes', () => {
         'agent-123',
         'sub-123',
         100,
-        '2024-01-01T00:00:00Z'
+        '2024-01-01T00:00:00Z',
+        'branch-123'
       );
 
       expect(result).toBeNull();

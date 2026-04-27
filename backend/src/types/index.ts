@@ -1,12 +1,21 @@
 // Shared types for the backend API
 // These types match the database schema defined in migrations/001_initial_schema.sql
 
+export interface Branch {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
   role: 'superadmin' | 'admin';
   full_name: string;
   is_active: boolean;
+  branch_id: string;
   profile_picture_url?: string;
   is_first_login: boolean;
   onboarding_completed: boolean;
@@ -24,6 +33,7 @@ export interface Agent {
   email?: string;
   role?: string;
   team_leader_id?: string;
+  branch_id: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -36,6 +46,7 @@ export interface Plan {
   speed: string;
   price: number;
   inclusions: string[];
+  branch_id: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -60,6 +71,7 @@ export interface Application {
   status_reason?: string;
   agent_id: string;
   plan_id: string;
+  branch_id: string;
   created_at: string;
   updated_at: string;
   activated_at?: string;
@@ -73,6 +85,7 @@ export interface Commission {
   subscriber_id: string;
   amount: number;
   status: 'Pending' | 'Eligible' | 'Paid';
+  branch_id: string;
   date_activated: string;
   date_paid?: string;
   created_at: string;
@@ -99,6 +112,7 @@ export interface Event {
   end_date: string;
   all_day: boolean;
   color: string;
+  branch_id: string;
   created_by?: string;
   created_at: string;
   updated_at: string;

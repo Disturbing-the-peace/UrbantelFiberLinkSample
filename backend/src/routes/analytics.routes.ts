@@ -1,12 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { verifyToken, checkAdmin } from '../middleware/auth';
+import { applyBranchFilter, getBranchFilterValue } from '../middleware/branchFilter';
 
 const router = Router();
 
 /**
  * GET /api/analytics/subscribers-monthly
  * Get total number of subscribers (activated applications) for the current month
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/subscribers-monthly', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
@@ -14,12 +16,17 @@ router.get('/subscribers-monthly', verifyToken, checkAdmin, async (req: Request,
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-    const { count, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Activated')
       .gte('activated_at', startOfMonth)
       .lte('activated_at', endOfMonth);
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { count, error } = await query;
 
     if (error) {
       console.error('Error fetching monthly subscribers:', error);
@@ -36,13 +43,19 @@ router.get('/subscribers-monthly', verifyToken, checkAdmin, async (req: Request,
 /**
  * GET /api/analytics/subscribers-per-agent
  * Get subscriber count grouped by agent
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/subscribers-per-agent', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('agent_id, agents:agent_id (id, name)')
       .eq('status', 'Activated');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching subscribers per agent:', error);
@@ -77,13 +90,19 @@ router.get('/subscribers-per-agent', verifyToken, checkAdmin, async (req: Reques
 /**
  * GET /api/analytics/subscribers-per-plan
  * Get subscriber count grouped by plan
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/subscribers-per-plan', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('plan_id, plans:plan_id (id, name, category)')
       .eq('status', 'Activated');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching subscribers per plan:', error);
@@ -120,18 +139,24 @@ router.get('/subscribers-per-plan', verifyToken, checkAdmin, async (req: Request
 /**
  * GET /api/analytics/subscription-trends
  * Get subscription trends over time (monthly aggregation for the last 12 months)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/subscription-trends', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const now = new Date();
     const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString();
 
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('activated_at')
       .eq('status', 'Activated')
       .gte('activated_at', twelveMonthsAgo)
       .order('activated_at', { ascending: true });
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching subscription trends:', error);
@@ -165,13 +190,22 @@ router.get('/subscription-trends', verifyToken, checkAdmin, async (req: Request,
 /**
  * GET /api/analytics/conversion-rate
  * Calculate application conversion rate (Activated / Total Applications)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/conversion-rate', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
+    const branchFilter = getBranchFilterValue(req);
+
     // Get total applications count
-    const { count: totalCount, error: totalError } = await supabase
+    let totalQuery = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true });
+    
+    if (branchFilter) {
+      totalQuery = totalQuery.eq('branch_id', branchFilter);
+    }
+
+    const { count: totalCount, error: totalError } = await totalQuery;
 
     if (totalError) {
       console.error('Error fetching total applications:', totalError);
@@ -179,10 +213,16 @@ router.get('/conversion-rate', verifyToken, checkAdmin, async (req: Request, res
     }
 
     // Get activated applications count
-    const { count: activatedCount, error: activatedError } = await supabase
+    let activatedQuery = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Activated');
+    
+    if (branchFilter) {
+      activatedQuery = activatedQuery.eq('branch_id', branchFilter);
+    }
+
+    const { count: activatedCount, error: activatedError } = await activatedQuery;
 
     if (activatedError) {
       console.error('Error fetching activated applications:', activatedError);
@@ -207,15 +247,23 @@ router.get('/conversion-rate', verifyToken, checkAdmin, async (req: Request, res
 /**
  * GET /api/analytics/pending-applications
  * Get count of pending applications (Submitted, Under Review, Approved, Scheduled for Installation)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/pending-applications', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
     const pendingStatuses = ['Submitted', 'Under Review', 'Approved', 'Scheduled for Installation'];
+    const branchFilter = getBranchFilterValue(req);
 
-    const { count, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .in('status', pendingStatuses);
+
+    if (branchFilter) {
+      query = query.eq('branch_id', branchFilter);
+    }
+
+    const { count, error } = await query;
 
     if (error) {
       console.error('Error fetching pending applications:', error);
@@ -232,13 +280,19 @@ router.get('/pending-applications', verifyToken, checkAdmin, async (req: Request
 /**
  * GET /api/analytics/total-commissions-due
  * Get total amount of commissions with status "Eligible" (ready to be paid)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/total-commissions-due', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: commissions, error } = await supabase
+    let query = supabase
       .from('commissions')
       .select('amount')
       .eq('status', 'Eligible');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: commissions, error } = await query;
 
     if (error) {
       console.error('Error fetching commissions due:', error);
@@ -260,12 +314,18 @@ router.get('/total-commissions-due', verifyToken, checkAdmin, async (req: Reques
 /**
  * GET /api/analytics/pipeline-snapshot
  * Get count of applications at each status (pipeline overview)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/pipeline-snapshot', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('status');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching pipeline snapshot:', error);
@@ -296,6 +356,7 @@ router.get('/pipeline-snapshot', verifyToken, checkAdmin, async (req: Request, r
  * GET /api/analytics/agent-rankings
  * Get agent rankings by total activations
  * Query params: period=monthly|quarterly (default: monthly)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/agent-rankings', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
@@ -312,11 +373,16 @@ router.get('/agent-rankings', verifyToken, checkAdmin, async (req: Request, res:
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('agent_id, status, agents:agent_id (id, name)')
       .eq('status', 'Activated')
       .gte('activated_at', startDate.toISOString());
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching agent rankings:', error);
@@ -354,12 +420,18 @@ router.get('/agent-rankings', verifyToken, checkAdmin, async (req: Request, res:
 /**
  * GET /api/analytics/agent-activations-by-status
  * Get activations per agent broken down by application status
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/agent-activations-by-status', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('agent_id, status, agents:agent_id (id, name)');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching agent activations by status:', error);
@@ -397,6 +469,7 @@ router.get('/agent-activations-by-status', verifyToken, checkAdmin, async (req: 
  * GET /api/analytics/stuck-applications
  * Get applications that have been in the same status for too long
  * Threshold: 30 days for non-terminal statuses
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/stuck-applications', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
@@ -405,13 +478,18 @@ router.get('/stuck-applications', verifyToken, checkAdmin, async (req: Request, 
 
     const nonTerminalStatuses = ['Submitted', 'Under Review', 'Approved', 'Scheduled for Installation'];
 
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('id, first_name, last_name, status, updated_at, agents:agent_id (name)')
       .in('status', nonTerminalStatuses)
       .lt('updated_at', thirtyDaysAgo.toISOString())
       .order('updated_at', { ascending: true })
       .limit(10);
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching stuck applications:', error);
@@ -440,12 +518,18 @@ router.get('/stuck-applications', verifyToken, checkAdmin, async (req: Request, 
 /**
  * GET /api/analytics/agent-commissions-breakdown
  * Get commission breakdown per agent (Eligible vs Paid)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/agent-commissions-breakdown', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: commissions, error } = await supabase
+    let query = supabase
       .from('commissions')
       .select('agent_id, status, amount, agents:agent_id (name)');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: commissions, error } = await query;
 
     if (error) {
       console.error('Error fetching agent commissions breakdown:', error);
@@ -493,14 +577,20 @@ router.get('/agent-commissions-breakdown', verifyToken, checkAdmin, async (req: 
 /**
  * GET /api/analytics/pipeline-duration
  * Calculate average time from Submitted to Activated
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/pipeline-duration', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('created_at, activated_at')
       .eq('status', 'Activated')
       .not('activated_at', 'is', null);
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching pipeline duration:', error);
@@ -533,13 +623,19 @@ router.get('/pipeline-duration', verifyToken, checkAdmin, async (req: Request, r
 /**
  * GET /api/analytics/plan-category-distribution
  * Get subscriber distribution across Residential vs Business plans
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/plan-category-distribution', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('plan_id, plans:plan_id (category)')
       .eq('status', 'Activated');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching plan category distribution:', error);
@@ -569,13 +665,19 @@ router.get('/plan-category-distribution', verifyToken, checkAdmin, async (req: R
 /**
  * GET /api/analytics/revenue-estimates
  * Calculate monthly revenue estimates based on activated plans
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/revenue-estimates', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('plan_id, plans:plan_id (price), activated_at')
       .eq('status', 'Activated');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching revenue estimates:', error);
@@ -624,14 +726,20 @@ router.get('/revenue-estimates', verifyToken, checkAdmin, async (req: Request, r
 /**
  * GET /api/analytics/denial-reasons
  * Get most common denial reasons
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/denial-reasons', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('status_reason')
       .eq('status', 'Denied')
       .not('status_reason', 'is', null);
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching denial reasons:', error);
@@ -664,15 +772,21 @@ router.get('/denial-reasons', verifyToken, checkAdmin, async (req: Request, res:
 /**
  * GET /api/analytics/subscriber-locations
  * Get all subscriber locations with coordinates for map display
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/subscriber-locations', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('id, first_name, last_name, latitude, longitude, plans:plan_id (name, category)')
       .eq('status', 'Activated')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null);
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching subscriber locations:', error);
@@ -698,12 +812,18 @@ router.get('/subscriber-locations', verifyToken, checkAdmin, async (req: Request
 /**
  * GET /api/analytics/agent-conversion-rates
  * Get conversion rate per agent (Activated / Total Applications)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/agent-conversion-rates', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('agent_id, status, agents:agent_id (name)');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching agent conversion rates:', error);
@@ -755,12 +875,18 @@ router.get('/agent-conversion-rates', verifyToken, checkAdmin, async (req: Reque
 /**
  * GET /api/analytics/plan-conversion-rates
  * Get conversion rate per plan category (Activated / Total Applications)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/plan-conversion-rates', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: applications, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('plan_id, status, plans:plan_id (name, category)');
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: applications, error } = await query;
 
     if (error) {
       console.error('Error fetching plan conversion rates:', error);
@@ -809,14 +935,20 @@ router.get('/plan-conversion-rates', verifyToken, checkAdmin, async (req: Reques
 /**
  * GET /api/analytics/growth-comparison
  * Get month-over-month growth comparison
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/growth-comparison', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { data: subscribers, error } = await supabase
+    let query = supabase
       .from('applications')
       .select('activated_at')
       .eq('status', 'Activated')
       .order('activated_at', { ascending: true });
+
+    // Apply branch filtering
+    query = applyBranchFilter(query, req);
+
+    const { data: subscribers, error } = await query;
 
     if (error) {
       console.error('Error fetching growth comparison:', error);
@@ -863,13 +995,22 @@ router.get('/growth-comparison', verifyToken, checkAdmin, async (req: Request, r
 /**
  * GET /api/analytics/void-rate
  * Calculate void rate (Voided / Total Applications)
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/void-rate', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
+    const branchFilter = getBranchFilterValue(req);
+
     // Get total applications count
-    const { count: totalCount, error: totalError } = await supabase
+    let totalQuery = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true });
+    
+    if (branchFilter) {
+      totalQuery = totalQuery.eq('branch_id', branchFilter);
+    }
+
+    const { count: totalCount, error: totalError } = await totalQuery;
 
     if (totalError) {
       console.error('Error fetching total applications:', totalError);
@@ -877,10 +1018,16 @@ router.get('/void-rate', verifyToken, checkAdmin, async (req: Request, res: Resp
     }
 
     // Get voided applications count
-    const { count: voidedCount, error: voidedError } = await supabase
+    let voidedQuery = supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Voided');
+    
+    if (branchFilter) {
+      voidedQuery = voidedQuery.eq('branch_id', branchFilter);
+    }
+
+    const { count: voidedCount, error: voidedError } = await voidedQuery;
 
     if (voidedError) {
       console.error('Error fetching voided applications:', voidedError);

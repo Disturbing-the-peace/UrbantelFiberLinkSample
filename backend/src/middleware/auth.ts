@@ -9,6 +9,7 @@ declare global {
         id: string;
         email: string;
         role: 'admin' | 'superadmin';
+        branch_id: string;
       };
     }
   }
@@ -45,10 +46,10 @@ export const verifyToken = async (
 
     console.log('Token verified for user:', user.id, user.email);
 
-    // Fetch user role and active status from database
+    // Fetch user role, active status, and branch from database
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, is_active')
+      .select('role, is_active, branch_id')
       .eq('id', user.id)
       .single();
 
@@ -73,6 +74,7 @@ export const verifyToken = async (
       id: user.id,
       email: user.email!,
       role: userData.role,
+      branch_id: userData.branch_id,
     };
 
     next();

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Agent } from '@/types';
 import { agentsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import DeleteAgentModal from '@/components/DeleteAgentModal';
 import Pagination from '@/components/Pagination';
@@ -632,6 +633,7 @@ interface AgentFormModalProps {
 }
 
 function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: agent?.name || '',
     contact_number: agent?.contact_number || '',
@@ -666,10 +668,15 @@ function AgentFormModal({ agent, onClose, onSuccess }: AgentFormModalProps) {
 
     const loadingToast = toast.loading(agent ? 'Updating agent...' : 'Creating agent...');
     try {
+      // When creating a new agent, automatically use the logged-in user's branch_id
+      const dataToSubmit = agent 
+        ? formData 
+        : { ...formData, branch_id: user?.branch_id };
+
       if (agent) {
-        await agentsApi.update(agent.id, formData);
+        await agentsApi.update(agent.id, dataToSubmit);
       } else {
-        await agentsApi.create(formData);
+        await agentsApi.create(dataToSubmit);
       }
       
       toast.dismiss(loadingToast);

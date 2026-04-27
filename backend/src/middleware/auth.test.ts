@@ -189,6 +189,7 @@ describe('Authentication Middleware', () => {
           data: {
             role: 'admin',
             is_active: true,
+            branch_id: 'branch-123',
           },
           error: null,
         }),
@@ -206,6 +207,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       });
       expect(nextFunction).toHaveBeenCalled();
       expect(mockResponse.status).not.toHaveBeenCalled();
@@ -231,6 +233,7 @@ describe('Authentication Middleware', () => {
           data: {
             role: 'superadmin',
             is_active: true,
+            branch_id: 'branch-456',
           },
           error: null,
         }),
@@ -248,6 +251,7 @@ describe('Authentication Middleware', () => {
         id: 'superadmin123',
         email: 'superadmin@example.com',
         role: 'superadmin',
+        branch_id: 'branch-456',
       });
       expect(nextFunction).toHaveBeenCalled();
       expect(mockResponse.status).not.toHaveBeenCalled();
@@ -294,6 +298,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
 
       checkAdmin(
@@ -311,6 +316,7 @@ describe('Authentication Middleware', () => {
         id: 'superadmin123',
         email: 'superadmin@example.com',
         role: 'superadmin',
+        branch_id: 'branch-123',
       };
 
       checkAdmin(
@@ -344,6 +350,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
 
       checkSuperadmin(
@@ -364,6 +371,7 @@ describe('Authentication Middleware', () => {
         id: 'superadmin123',
         email: 'superadmin@example.com',
         role: 'superadmin',
+        branch_id: 'branch-123',
       };
 
       checkSuperadmin(
@@ -397,6 +405,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'user@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -420,6 +429,7 @@ describe('Authentication Middleware', () => {
         id: 'admin123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -454,6 +464,7 @@ describe('Authentication Middleware', () => {
         id: 'admin123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -489,6 +500,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'user@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -515,6 +527,7 @@ describe('Authentication Middleware', () => {
         id: 'admin123',
         email: 'admin@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -546,6 +559,7 @@ describe('Authentication Middleware', () => {
         id: 'user123',
         email: 'user@example.com',
         role: 'admin',
+        branch_id: 'branch-123',
       };
       mockRequest.headers = { authorization: 'Bearer valid_token' };
 
@@ -574,6 +588,7 @@ describe('Authentication Middleware', () => {
           id: 'user123',
           email: 'user@example.com',
           role: 'admin',
+          branch_id: 'branch-123',
         },
         ip: '192.168.1.1',
         headers: { 'user-agent': 'Mozilla/5.0' },
@@ -628,6 +643,7 @@ describe('Authentication Middleware', () => {
           id: 'user123',
           email: 'user@example.com',
           role: 'admin',
+          branch_id: 'branch-123',
         },
         ip: '192.168.1.1',
         headers: { 'user-agent': 'Mozilla/5.0' },
@@ -656,6 +672,7 @@ describe('Authentication Middleware', () => {
           id: 'admin123',
           email: 'admin@example.com',
           role: 'superadmin',
+          branch_id: 'branch-123',
         },
         ip: '10.0.0.1',
         headers: { 'user-agent': 'Chrome' },

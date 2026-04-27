@@ -7,21 +7,31 @@ const router = Router();
 /**
  * GET /api/subscribers
  * List all subscribers (activated applications) with optional filtering
- * Query params: agent_id, plan_id, start_date, end_date
+ * Query params: agent_id, plan_id, start_date, end_date, branch_id
+ * Superadmins see all branches, admins see only their branch
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { agent_id, plan_id, start_date, end_date } = req.query;
+    const { agent_id, plan_id, start_date, end_date, branch_id } = req.query;
 
     let query = supabase
       .from('applications')
       .select(`
         *,
         agents:agent_id (id, name, referral_code),
-        plans:plan_id (id, name, category, speed, price)
+        plans:plan_id (id, name, category, speed, price),
+        branches:branch_id (id, name)
       `)
       .eq('status', 'Activated')
       .order('activated_at', { ascending: false });
+
+    // Branch filtering: admins see only their branch, superadmins can filter or see all
+    if (req.user!.role === 'admin') {
+      query = query.eq('branch_id', req.user!.branch_id);
+    } else if (branch_id && typeof branch_id === 'string') {
+      // Superadmin filtering by specific branch
+      query = query.eq('branch_id', branch_id);
+    }
 
     // Filter by agent
     if (agent_id && typeof agent_id === 'string') {

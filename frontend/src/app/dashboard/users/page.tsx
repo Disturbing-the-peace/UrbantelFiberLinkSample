@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { usersApi } from '@/lib/api';
+import { usersApi, getAccessToken } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import DeleteUserModal from '@/components/DeleteUserModal';
@@ -408,12 +408,38 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
     email: user?.email || '',
     full_name: user?.full_name || '',
     role: user?.role || 'admin',
+    branch_id: user?.branch_id || '',
     password: '',
     is_active: user?.is_active ?? true,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(true);
   const toast = useToast();
+
+  // Fetch branches for dropdown
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        setLoadingBranches(true);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.56:5000'}/api/branches`, {
+          headers: {
+            'Authorization': `Bearer ${await getAccessToken()}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setBranches(data);
+        }
+      } catch (err) {
+        console.error('Error fetching branches:', err);
+      } finally {
+        setLoadingBranches(false);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -423,7 +449,7 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
     const loadingToast = toast.loading(user ? 'Updating user...' : 'Creating user...');
     try {
       const body = user
-        ? { full_name: formData.full_name, role: formData.role, is_active: formData.is_active }
+        ? { full_name: formData.full_name, role: formData.role, branch_id: formData.branch_id, is_active: formData.is_active }
         : formData;
 
       if (user) {
@@ -503,6 +529,30 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
               <option value="admin">Admin</option>
               <option value="superadmin">Superadmin</option>
             </select>
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700 mb-2">
+              Branch *
+            </label>
+            <select
+              id="branch_id"
+              value={formData.branch_id}
+              onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              disabled={loadingBranches}
+            >
+              <option value="">Select a branch</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} ({branch.code})
+                </option>
+              ))}
+            </select>
+            {loadingBranches && (
+              <p className="text-xs text-gray-500 mt-1">Loading branches...</p>
+            )}
           </div>
 
           {!user && (

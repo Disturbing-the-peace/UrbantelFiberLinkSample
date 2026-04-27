@@ -13,6 +13,8 @@ export interface User {
   fullName: string;
   isActive: boolean;
   requires2FA: boolean;
+  branch_id?: string;
+  branch_name?: string;
   profile_picture_url?: string;
   full_name?: string;
   is_first_login?: boolean;
@@ -159,7 +161,7 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
     
     const { data, error } = await supabase
       .from('user_auth_status')
-      .select('*')
+      .select('*, branches:branch_id(id, name)')
       .eq('id', userId)
       .single();
 
@@ -183,6 +185,8 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
       full_name: data.full_name,
       isActive: data.is_active,
       requires2FA: data.requires_2fa,
+      branch_id: data.branch_id,
+      branch_name: data.branches?.name,
       profile_picture_url: data.profile_picture_url,
       is_first_login: data.is_first_login ?? false,
       onboarding_completed: data.onboarding_completed ?? true,
