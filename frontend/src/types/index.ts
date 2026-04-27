@@ -7,6 +7,7 @@ export interface User {
   role: 'superadmin' | 'admin';
   full_name: string;
   is_active: boolean;
+  branch_id?: string;
   profile_picture_url?: string;
   is_first_login?: boolean;
   onboarding_completed?: boolean;
@@ -24,6 +25,7 @@ export interface Agent {
   email?: string;
   role?: string;
   team_leader_id?: string;
+  branch_id?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
