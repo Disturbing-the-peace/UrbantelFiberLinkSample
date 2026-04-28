@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { verifyToken, checkAdmin } from '../middleware/auth';
+import { applyBranchFilter } from '../middleware/branchFilter';
 import { Commission } from '../types';
 
 const router = Router();
@@ -63,12 +64,12 @@ export async function createCommissionForActivation(
 /**
  * GET /api/commissions
  * List all commissions with optional filtering
- * Query params: agent_id, status, branch_id
- * Superadmins see all branches, admins see only their branch
+ * Query params: agent_id, status
+ * Superadmins see all branches, admins see only their assigned branches
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { agent_id, status, branch_id } = req.query;
+    const { agent_id, status } = req.query;
 
     let query = supabase
       .from('commissions')
@@ -80,13 +81,8 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
       `)
       .order('date_activated', { ascending: false });
 
-    // Branch filtering: admins see only their branch, superadmins can filter or see all
-    if (req.user!.role === 'admin') {
-      query = query.eq('branch_id', req.user!.branch_id);
-    } else if (branch_id && typeof branch_id === 'string') {
-      // Superadmin filtering by specific branch
-      query = query.eq('branch_id', branch_id);
-    }
+    // Apply branch filtering based on user role
+    query = applyBranchFilter(query, req);
 
     // Filter by agent
     if (agent_id && typeof agent_id === 'string') {

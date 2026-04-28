@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { verifyToken, checkAdmin } from '../middleware/auth';
+import { applyBranchFilter } from '../middleware/branchFilter';
 
 const router = Router();
 
@@ -8,11 +9,11 @@ const router = Router();
  * GET /api/subscribers
  * List all subscribers (activated applications) with optional filtering
  * Query params: agent_id, plan_id, start_date, end_date, branch_id
- * Superadmins see all branches, admins see only their branch
+ * Superadmins see all branches, admins see only their assigned branches
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { agent_id, plan_id, start_date, end_date, branch_id } = req.query;
+    const { agent_id, plan_id, start_date, end_date } = req.query;
 
     let query = supabase
       .from('applications')
@@ -25,13 +26,8 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
       .eq('status', 'Activated')
       .order('activated_at', { ascending: false });
 
-    // Branch filtering: admins see only their branch, superadmins can filter or see all
-    if (req.user!.role === 'admin') {
-      query = query.eq('branch_id', req.user!.branch_id);
-    } else if (branch_id && typeof branch_id === 'string') {
-      // Superadmin filtering by specific branch
-      query = query.eq('branch_id', branch_id);
-    }
+    // Apply branch filtering based on user role
+    query = applyBranchFilter(query, req);
 
     // Filter by agent
     if (agent_id && typeof agent_id === 'string') {

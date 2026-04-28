@@ -4,9 +4,19 @@
 export interface Branch {
   id: string;
   name: string;
+  address?: string;
+  contact_number?: string;
+  email?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserBranch {
+  id: string;
+  user_id: string;
+  branch_id: string;
+  created_at: string;
 }
 
 export interface User {
@@ -15,7 +25,7 @@ export interface User {
   role: 'superadmin' | 'admin';
   full_name: string;
   is_active: boolean;
-  branch_id: string;
+  primary_branch_id: string;
   profile_picture_url?: string;
   is_first_login: boolean;
   onboarding_completed: boolean;
@@ -23,6 +33,7 @@ export interface User {
   last_login_at?: string;
   created_at: string;
   updated_at: string;
+  branches?: Branch[]; // Array of branches user has access to
 }
 
 export interface Agent {

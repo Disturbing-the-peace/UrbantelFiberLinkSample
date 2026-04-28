@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 /**
  * Helper function to apply branch filtering to Supabase queries
- * Superadmins see all branches, admins see only their branch
+ * Superadmins see all branches, admins see only their assigned branches
  * 
  * @param query - The Supabase query builder
  * @param req - Express request object with user info
@@ -14,9 +14,9 @@ export function applyBranchFilter<T>(
   req: Request,
   branchIdColumn: string = 'branch_id'
 ): any {
-  // If user is admin, filter by their branch
-  if (req.user?.role === 'admin' && req.user?.branch_id) {
-    return query.eq(branchIdColumn, req.user.branch_id);
+  // If user is admin, filter by their accessible branches
+  if (req.user?.role === 'admin' && req.user?.branch_ids && req.user.branch_ids.length > 0) {
+    return query.in(branchIdColumn, req.user.branch_ids);
   }
   
   // Superadmins see all branches by default
@@ -31,19 +31,20 @@ export function applyBranchFilter<T>(
 
 /**
  * Get the branch filter condition for count queries
- * Returns the branch_id to filter by, or null for no filtering
+ * Returns the branch_ids to filter by, or null for no filtering
  */
-export function getBranchFilterValue(req: Request): string | null {
-  // If user is admin, return their branch
-  if (req.user?.role === 'admin' && req.user?.branch_id) {
-    return req.user.branch_id;
+export function getBranchFilterValue(req: Request): string[] | null {
+  // If user is admin, return their accessible branches
+  if (req.user?.role === 'admin' && req.user?.branch_ids && req.user.branch_ids.length > 0) {
+    return req.user.branch_ids;
   }
   
   // Superadmins can optionally filter by branch_id query param
   const branchIdParam = req.query.branch_id;
   if (branchIdParam && typeof branchIdParam === 'string') {
-    return branchIdParam;
+    return [branchIdParam];
   }
   
   return null;
 }
+

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import UserMenu from '@/components/UserMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import BranchBadge from '@/components/BranchBadge';
 import FirstLoginModal from '@/components/FirstLoginModal';
 import OnboardingTour from '@/components/OnboardingTour';
 import Link from 'next/link';
@@ -195,13 +196,10 @@ export default function DashboardLayout({
 
             <div className="flex items-center gap-3">
               {/* Branch Badge */}
-              {user?.branch_name && (
-                <div className="hidden sm:flex items-center px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    {user.branch_name}
-                  </span>
-                </div>
-              )}
+              <BranchBadge 
+                primaryBranchName={user?.primary_branch_name || user?.branch_name}
+                branches={user?.branches}
+              />
               <ThemeToggle variant="subtle" />
               <UserMenu />
             </div>

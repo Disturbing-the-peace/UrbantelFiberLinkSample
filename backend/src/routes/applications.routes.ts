@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { verifyToken, checkAdmin } from '../middleware/auth';
+import { applyBranchFilter } from '../middleware/branchFilter';
 import { Application } from '../types';
 import { notificationService } from '../services/notification.service';
 import { createCommissionForActivation } from './commissions.routes';
@@ -29,12 +30,12 @@ const STATUSES_REQUIRING_REASON = ['Denied', 'Voided'];
 /**
  * GET /api/applications
  * List all applications with optional filtering
- * Query params: status, agent_id, start_date, end_date, branch_id
- * Superadmins see all branches, admins see only their branch
+ * Query params: status, agent_id, start_date, end_date
+ * Superadmins see all branches, admins see only their assigned branches
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { status, agent_id, start_date, end_date, branch_id } = req.query;
+    const { status, agent_id, start_date, end_date } = req.query;
 
     let query = supabase
       .from('applications')
@@ -46,13 +47,8 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
       `)
       .order('created_at', { ascending: false });
 
-    // Branch filtering: admins see only their branch, superadmins can filter or see all
-    if (req.user!.role === 'admin') {
-      query = query.eq('branch_id', req.user!.branch_id);
-    } else if (branch_id && typeof branch_id === 'string') {
-      // Superadmin filtering by specific branch
-      query = query.eq('branch_id', branch_id);
-    }
+    // Apply branch filtering based on user role
+    query = applyBranchFilter(query, req);
 
     // Filter by status
     if (status && typeof status === 'string') {

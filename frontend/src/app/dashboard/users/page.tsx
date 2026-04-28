@@ -25,6 +25,8 @@ function UsersPageContent() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<{ id: string; email: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState<{ id: string; email: string; name: string } | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
   const { user } = useAuth();
   const toast = useToast();
   
@@ -114,20 +116,23 @@ function UsersPageContent() {
     }
   };
 
-  const handleResetPassword = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to reset the password for ${userEmail}? The password will be set to: 123123123`)) {
-      return;
-    }
+  const handleResetPassword = (userId: string, userEmail: string, userName: string) => {
+    setResettingPassword({ id: userId, email: userEmail, name: userName });
+  };
 
-    const loadingToast = toast.loading('Resetting password...');
+  const confirmResetPassword = async () => {
+    if (!resettingPassword) return;
+
+    setResetLoading(true);
     try {
-      const response = await usersApi.resetPassword(userId);
-      toast.dismiss(loadingToast);
+      const response = await usersApi.resetPassword(resettingPassword.id);
       toast.success(`Password reset successfully! New password: ${response.default_password}`);
+      setResettingPassword(null);
     } catch (err) {
-      toast.dismiss(loadingToast);
       const errorMessage = err instanceof Error ? err.message : 'Failed to reset password';
       toast.error(errorMessage);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -188,6 +193,9 @@ function UsersPageContent() {
                 Role
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                Branches
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -215,6 +223,30 @@ function UsersPageContent() {
                     {user.role}
                   </span>
                 </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 dark:text-white">
+                    {user.branches && user.branches.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {user.branches.map((branch: any) => (
+                          <span
+                            key={branch.id}
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              branch.id === user.primary_branch_id
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-semibold'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                            }`}
+                            title={branch.id === user.primary_branch_id ? 'Primary Branch' : ''}
+                          >
+                            {branch.name}
+                            {branch.id === user.primary_branch_id && ' ★'}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">No branches</span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -238,7 +270,7 @@ function UsersPageContent() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleResetPassword(user.id, user.email)}
+                      onClick={() => handleResetPassword(user.id, user.email, user.full_name)}
                       className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 rounded hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
                       title="Reset Password"
                     >
@@ -299,7 +331,7 @@ function UsersPageContent() {
                   </span>
                 </div>
 
-                <div className="mb-3">
+                <div className="mb-3 flex flex-wrap gap-2">
                   <span
                     className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       user.role === 'superadmin'
@@ -309,6 +341,23 @@ function UsersPageContent() {
                   >
                     {user.role}
                   </span>
+                  {user.branches && user.branches.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {user.branches.map((branch: any) => (
+                        <span
+                          key={branch.id}
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            branch.id === user.primary_branch_id
+                              ? 'bg-green-100 text-green-800 font-semibold'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {branch.name}
+                          {branch.id === user.primary_branch_id && ' ★'}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -322,12 +371,12 @@ function UsersPageContent() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleResetPassword(user.id, user.email)}
+                    onClick={() => handleResetPassword(user.id, user.email, user.full_name)}
                     className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-yellow-600 hover:text-yellow-700 bg-yellow-50 hover:bg-yellow-100 rounded transition-colors"
                     title="Reset Password"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
                     </svg>
                   </button>
                   {user.is_active && (
@@ -393,6 +442,15 @@ function UsersPageContent() {
         userEmail={deletingUser?.email || ''}
         loading={deleteLoading}
       />
+
+      <ResetPasswordModal
+        isOpen={!!resettingPassword}
+        onClose={() => setResettingPassword(null)}
+        onConfirm={confirmResetPassword}
+        userName={resettingPassword?.name || ''}
+        userEmail={resettingPassword?.email || ''}
+        loading={resetLoading}
+      />
     </div>
   );
 }
@@ -408,7 +466,8 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
     email: user?.email || '',
     full_name: user?.full_name || '',
     role: user?.role || 'admin',
-    branch_id: user?.branch_id || '',
+    primary_branch_id: user?.primary_branch_id || user?.branch_id || '',
+    branch_ids: user?.branches?.map(b => b.id) || (user?.branch_id ? [user.branch_id] : []),
     password: '',
     is_active: user?.is_active ?? true,
   });
@@ -441,16 +500,70 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
     fetchBranches();
   }, []);
 
+  // Handle branch selection toggle
+  const toggleBranch = (branchId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.branch_ids.includes(branchId);
+      const newBranchIds = isSelected
+        ? prev.branch_ids.filter(id => id !== branchId)
+        : [...prev.branch_ids, branchId];
+      
+      // If removing the primary branch, clear it
+      let newPrimaryBranchId = prev.primary_branch_id;
+      if (isSelected && prev.primary_branch_id === branchId) {
+        newPrimaryBranchId = newBranchIds.length > 0 ? newBranchIds[0] : '';
+      }
+      
+      return {
+        ...prev,
+        branch_ids: newBranchIds,
+        primary_branch_id: newPrimaryBranchId,
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
+    // Validation
+    if (formData.branch_ids.length === 0) {
+      setError('At least one branch must be selected');
+      setSubmitting(false);
+      return;
+    }
+
+    if (!formData.primary_branch_id) {
+      setError('Primary branch must be selected');
+      setSubmitting(false);
+      return;
+    }
+
+    if (!formData.branch_ids.includes(formData.primary_branch_id)) {
+      setError('Primary branch must be one of the selected branches');
+      setSubmitting(false);
+      return;
+    }
+
     const loadingToast = toast.loading(user ? 'Updating user...' : 'Creating user...');
     try {
       const body = user
-        ? { full_name: formData.full_name, role: formData.role, branch_id: formData.branch_id, is_active: formData.is_active }
-        : formData;
+        ? { 
+            full_name: formData.full_name, 
+            role: formData.role, 
+            primary_branch_id: formData.primary_branch_id,
+            branch_ids: formData.branch_ids,
+            is_active: formData.is_active 
+          }
+        : {
+            email: formData.email,
+            full_name: formData.full_name,
+            role: formData.role,
+            primary_branch_id: formData.primary_branch_id,
+            branch_ids: formData.branch_ids,
+            password: formData.password,
+          };
 
       if (user) {
         await usersApi.update(user.id, body);
@@ -472,14 +585,14 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900/20 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg transition-colors duration-300 p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">
+    <div className="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg transition-colors duration-300 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
           {user ? 'Edit User' : 'Create User'}
         </h2>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
@@ -487,7 +600,7 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
         <form onSubmit={handleSubmit}>
           {!user && (
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email *
               </label>
               <input
@@ -495,14 +608,14 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required
               />
             </div>
           )}
 
           <div className="mb-4">
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Full Name *
             </label>
             <input
@@ -510,20 +623,20 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
               type="text"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div className="mb-4">
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Role *
             </label>
             <select
               id="role"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'superadmin' })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
             >
               <option value="admin">Admin</option>
@@ -532,32 +645,71 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="branch_id" className="block text-sm font-medium text-gray-700 mb-2">
-              Branch *
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Assigned Branches * <span className="text-xs text-gray-500">(Select at least one)</span>
+            </label>
+            <div className="border border-gray-300 dark:border-gray-600 rounded-md p-3 max-h-48 overflow-y-auto bg-white dark:bg-gray-700">
+              {loadingBranches ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Loading branches...</p>
+              ) : branches.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No branches available</p>
+              ) : (
+                <div className="space-y-2">
+                  {branches.map((branch) => (
+                    <label
+                      key={branch.id}
+                      className="flex items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.branch_ids.includes(branch.id)}
+                        onChange={() => toggleBranch(branch.id)}
+                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-900 dark:text-white">{branch.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            {formData.branch_ids.length > 0 && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                {formData.branch_ids.length} branch{formData.branch_ids.length !== 1 ? 'es' : ''} selected
+              </p>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="primary_branch_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Primary Branch * <span className="text-xs text-gray-500">(Main branch for this user)</span>
             </label>
             <select
-              id="branch_id"
-              value={formData.branch_id}
-              onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="primary_branch_id"
+              value={formData.primary_branch_id}
+              onChange={(e) => setFormData({ ...formData, primary_branch_id: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
-              disabled={loadingBranches}
+              disabled={loadingBranches || formData.branch_ids.length === 0}
             >
-              <option value="">Select a branch</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name} ({branch.code})
-                </option>
-              ))}
+              <option value="">Select primary branch</option>
+              {branches
+                .filter(branch => formData.branch_ids.includes(branch.id))
+                .map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
             </select>
-            {loadingBranches && (
-              <p className="text-xs text-gray-500 mt-1">Loading branches...</p>
+            {formData.branch_ids.length === 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Select at least one branch first
+              </p>
             )}
           </div>
 
           {!user && (
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password *
               </label>
               <input
@@ -565,11 +717,11 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 minLength={8}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters</p>
             </div>
           )}
 
@@ -591,14 +743,14 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-blue-800"
               disabled={submitting}
             >
               {submitting ? 'Saving...' : user ? 'Update' : 'Create'}
@@ -610,3 +762,88 @@ function UserFormModal({ user, onClose, onSuccess }: UserFormModalProps) {
   );
 }
 
+
+interface ResetPasswordModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  userName: string;
+  userEmail: string;
+  loading: boolean;
+}
+
+function ResetPasswordModal({ isOpen, onClose, onConfirm, userName, userEmail, loading }: ResetPasswordModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 transition-colors duration-300">
+        <div className="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 dark:bg-yellow-900/30 rounded-full mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-yellow-600 dark:text-yellow-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+            />
+          </svg>
+        </div>
+
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+          Reset Password
+        </h3>
+
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
+            Are you sure you want to reset the password for:
+          </p>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{userName}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{userEmail}</p>
+          </div>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium mb-1">
+              ⚠️ Default Password
+            </p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400">
+              The password will be reset to: <span className="font-mono font-bold">123123123</span>
+            </p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-2">
+              The user will be required to change this password on their next login.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Resetting...
+              </>
+            ) : (
+              'Reset Password'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

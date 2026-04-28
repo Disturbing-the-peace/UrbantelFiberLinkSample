@@ -183,11 +183,10 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
     }
 
     // Check if branch has any active users
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id')
+    const { data: userBranches, error: usersError } = await supabase
+      .from('user_branches')
+      .select('user_id')
       .eq('branch_id', id)
-      .eq('is_active', true)
       .limit(1);
 
     if (usersError) {
@@ -195,10 +194,10 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
       return res.status(500).json({ error: 'Failed to check branch users' });
     }
 
-    if (users && users.length > 0) {
+    if (userBranches && userBranches.length > 0) {
       return res.status(400).json({ 
-        error: 'Cannot deactivate branch with active users',
-        message: 'Please reassign or deactivate all users in this branch first.'
+        error: 'Cannot deactivate branch with assigned users',
+        message: 'Please reassign all users from this branch first.'
       });
     }
 

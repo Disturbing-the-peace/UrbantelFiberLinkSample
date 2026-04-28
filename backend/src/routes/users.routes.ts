@@ -11,7 +11,7 @@ const router = Router();
  */
 router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
-    const { email, full_name, role, password, branch_id } = req.body;
+    const { email, full_name, role, password, primary_branch_id, branch_ids } = req.body;
 
     // Validate required fields
     if (!email || !email.trim()) {
@@ -26,8 +26,14 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
     if (!password || password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
-    if (!branch_id) {
-      return res.status(400).json({ error: 'Branch is required' });
+    if (!primary_branch_id) {
+      return res.status(400).json({ error: 'Primary branch is required' });
+    }
+    if (!branch_ids || !Array.isArray(branch_ids) || branch_ids.length === 0) {
+      return res.status(400).json({ error: 'At least one branch must be assigned' });
+    }
+    if (!branch_ids.includes(primary_branch_id)) {
+      return res.status(400).json({ error: 'Primary branch must be included in assigned branches' });
     }
 
     // Create user in Supabase Auth
@@ -50,7 +56,7 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
         email: email.trim(),
         full_name: full_name.trim(),
         role: role,
-        branch_id: branch_id,
+        primary_branch_id: primary_branch_id,
         is_active: true,
       })
       .select()
@@ -61,6 +67,24 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
       // Rollback: delete auth user if database insert fails
       await supabase.auth.admin.deleteUser(authData.user.id);
       return res.status(500).json({ error: 'Failed to create user record' });
+    }
+
+    // Insert branch assignments
+    const branchAssignments = branch_ids.map((branchId: string) => ({
+      user_id: authData.user.id,
+      branch_id: branchId,
+    }));
+
+    const { error: branchError } = await supabase
+      .from('user_branches')
+      .insert(branchAssignments);
+
+    if (branchError) {
+      console.error('Error creating branch assignments:', branchError);
+      // Rollback: delete user and auth user
+      await supabase.from('users').delete().eq('id', authData.user.id);
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return res.status(500).json({ error: 'Failed to create branch assignments' });
     }
 
     res.status(201).json(user);
@@ -79,8 +103,8 @@ router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response
     const { is_active, role, branch_id } = req.query;
 
     let query = supabase
-      .from('users')
-      .select('*, branches:branch_id (id, name)')
+      .from('user_auth_status')
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Filter by active status if provided
@@ -93,9 +117,9 @@ router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response
       query = query.eq('role', role);
     }
 
-    // Filter by branch if provided
+    // Filter by branch if provided (checks if user has access to that branch)
     if (branch_id && typeof branch_id === 'string') {
-      query = query.eq('branch_id', branch_id);
+      query = query.contains('branches', [{ id: branch_id }]);
     }
 
     const { data: users, error } = await query;
@@ -144,7 +168,7 @@ router.get('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
 router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { full_name, role, is_active, email, branch_id } = req.body;
+    const { full_name, role, is_active, email, primary_branch_id, branch_ids } = req.body;
 
     // Check if user exists
     const { data: existing, error: fetchError } = await supabase
@@ -162,6 +186,16 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
       return res.status(400).json({ error: 'Cannot deactivate your own account' });
     }
 
+    // Validate branch_ids if provided
+    if (branch_ids !== undefined) {
+      if (!Array.isArray(branch_ids) || branch_ids.length === 0) {
+        return res.status(400).json({ error: 'At least one branch must be assigned' });
+      }
+      if (primary_branch_id && !branch_ids.includes(primary_branch_id)) {
+        return res.status(400).json({ error: 'Primary branch must be included in assigned branches' });
+      }
+    }
+
     // Build update object
     const updates: Partial<User> = {};
     if (full_name !== undefined) updates.full_name = full_name.trim();
@@ -169,10 +203,10 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
       updates.role = role;
     }
     if (is_active !== undefined) updates.is_active = is_active;
-    if (branch_id !== undefined) updates.branch_id = branch_id;
+    if (primary_branch_id !== undefined) updates.primary_branch_id = primary_branch_id;
 
     // Validate at least one field to update
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 0 && !email && !branch_ids) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
@@ -190,17 +224,58 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
       updates.email = email.trim();
     }
 
-    // Update user record
-    const { data: user, error } = await supabase
-      .from('users')
-      .update(updates)
+    // Update user record if there are updates
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ error: 'Failed to update user' });
+      }
+    }
+
+    // Update branch assignments if provided
+    if (branch_ids !== undefined) {
+      // Delete existing branch assignments
+      const { error: deleteError } = await supabase
+        .from('user_branches')
+        .delete()
+        .eq('user_id', id);
+
+      if (deleteError) {
+        console.error('Error deleting branch assignments:', deleteError);
+        return res.status(500).json({ error: 'Failed to update branch assignments' });
+      }
+
+      // Insert new branch assignments
+      const branchAssignments = branch_ids.map((branchId: string) => ({
+        user_id: id,
+        branch_id: branchId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('user_branches')
+        .insert(branchAssignments);
+
+      if (insertError) {
+        console.error('Error inserting branch assignments:', insertError);
+        return res.status(500).json({ error: 'Failed to update branch assignments' });
+      }
+    }
+
+    // Fetch updated user with branches
+    const { data: user, error: fetchUpdatedError } = await supabase
+      .from('user_auth_status')
+      .select('*')
       .eq('id', id)
-      .select()
       .single();
 
-    if (error) {
-      console.error('Error updating user:', error);
-      return res.status(500).json({ error: 'Failed to update user' });
+    if (fetchUpdatedError) {
+      console.error('Error fetching updated user:', fetchUpdatedError);
+      return res.status(500).json({ error: 'Failed to fetch updated user' });
     }
 
     res.json(user);

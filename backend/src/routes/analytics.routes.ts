@@ -202,7 +202,7 @@ router.get('/conversion-rate', verifyToken, checkAdmin, async (req: Request, res
       .select('*', { count: 'exact', head: true });
     
     if (branchFilter) {
-      totalQuery = totalQuery.eq('branch_id', branchFilter);
+      totalQuery = totalQuery.in('branch_id', branchFilter);
     }
 
     const { count: totalCount, error: totalError } = await totalQuery;
@@ -219,7 +219,7 @@ router.get('/conversion-rate', verifyToken, checkAdmin, async (req: Request, res
       .eq('status', 'Activated');
     
     if (branchFilter) {
-      activatedQuery = activatedQuery.eq('branch_id', branchFilter);
+      activatedQuery = activatedQuery.in('branch_id', branchFilter);
     }
 
     const { count: activatedCount, error: activatedError } = await activatedQuery;
@@ -260,7 +260,7 @@ router.get('/pending-applications', verifyToken, checkAdmin, async (req: Request
       .in('status', pendingStatuses);
 
     if (branchFilter) {
-      query = query.eq('branch_id', branchFilter);
+      query = query.in('branch_id', branchFilter);
     }
 
     const { count, error } = await query;
@@ -1007,7 +1007,7 @@ router.get('/void-rate', verifyToken, checkAdmin, async (req: Request, res: Resp
       .select('*', { count: 'exact', head: true });
     
     if (branchFilter) {
-      totalQuery = totalQuery.eq('branch_id', branchFilter);
+      totalQuery = totalQuery.in('branch_id', branchFilter);
     }
 
     const { count: totalCount, error: totalError } = await totalQuery;
@@ -1024,7 +1024,7 @@ router.get('/void-rate', verifyToken, checkAdmin, async (req: Request, res: Resp
       .eq('status', 'Voided');
     
     if (branchFilter) {
-      voidedQuery = voidedQuery.eq('branch_id', branchFilter);
+      voidedQuery = voidedQuery.in('branch_id', branchFilter);
     }
 
     const { count: voidedCount, error: voidedError } = await voidedQuery;

@@ -1,6 +1,17 @@
 // Shared types for the frontend application
 // These types match the database schema defined in backend/src/migrations/001_initial_schema.sql
 
+export interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  contact_number?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -8,6 +19,10 @@ export interface User {
   full_name: string;
   is_active: boolean;
   branch_id?: string;
+  branch_name?: string;
+  primary_branch_id?: string;
+  primary_branch_name?: string;
+  branches?: Branch[];
   profile_picture_url?: string;
   is_first_login?: boolean;
   onboarding_completed?: boolean;

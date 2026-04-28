@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { verifyToken, checkSuperadmin, checkAdmin } from '../middleware/auth';
+import { applyBranchFilter } from '../middleware/branchFilter';
 import { Agent } from '../types';
 
 const router = Router();
@@ -31,16 +32,16 @@ router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'Agent name is required' });
     }
 
-    // Use provided branch_id or default to user's branch_id
-    const agentBranchId = branch_id || req.user!.branch_id;
+    // Use provided branch_id or default to user's primary_branch_id
+    const agentBranchId = branch_id || req.user!.primary_branch_id;
 
     if (!agentBranchId) {
       return res.status(400).json({ error: 'Branch is required' });
     }
 
     // Validate branch access for admins
-    if (req.user!.role === 'admin' && req.user!.branch_id !== agentBranchId) {
-      return res.status(403).json({ error: 'You can only create agents in your assigned branch' });
+    if (req.user!.role === 'admin' && !req.user!.branch_ids.includes(agentBranchId)) {
+      return res.status(403).json({ error: 'You can only create agents in your assigned branches' });
     }
 
     // Validate that team leaders don't have a team leader
@@ -109,20 +110,15 @@ router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) =>
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { is_active, branch_id } = req.query;
+    const { is_active } = req.query;
 
     let query = supabase
       .from('agents')
       .select('*, branches:branch_id (id, name)')
       .order('created_at', { ascending: false });
 
-    // Branch filtering: admins see only their branch, superadmins can filter or see all
-    if (req.user!.role === 'admin') {
-      query = query.eq('branch_id', req.user!.branch_id);
-    } else if (branch_id && typeof branch_id === 'string') {
-      // Superadmin filtering by specific branch
-      query = query.eq('branch_id', branch_id);
-    }
+    // Apply branch filtering based on user role
+    query = applyBranchFilter(query, req);
 
     // Filter by active status if provided
     if (is_active !== undefined) {
@@ -267,8 +263,8 @@ router.put('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
     }
 
     // Validate branch access for admins
-    if (req.user!.role === 'admin' && req.user!.branch_id !== existing.branch_id) {
-      return res.status(403).json({ error: 'You can only update agents in your assigned branch' });
+    if (req.user!.role === 'admin' && !req.user!.branch_ids.includes(existing.branch_id)) {
+      return res.status(403).json({ error: 'You can only update agents in your assigned branches' });
     }
 
     // Validate that team leaders don't have a team leader

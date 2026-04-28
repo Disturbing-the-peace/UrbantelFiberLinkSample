@@ -8,7 +8,6 @@ import { apiRequest } from './api';
 export interface Branch {
   id: string;
   name: string;
-  code: string;
   address?: string;
   contact_number?: string;
   email?: string;
@@ -19,7 +18,6 @@ export interface Branch {
 
 export interface CreateBranchData {
   name: string;
-  code: string;
   address?: string;
   contact_number?: string;
   email?: string;
@@ -28,7 +26,6 @@ export interface CreateBranchData {
 
 export interface UpdateBranchData {
   name?: string;
-  code?: string;
   address?: string;
   contact_number?: string;
   email?: string;

@@ -9,7 +9,8 @@ declare global {
         id: string;
         email: string;
         role: 'admin' | 'superadmin';
-        branch_id: string;
+        primary_branch_id: string;
+        branch_ids: string[]; // All branches user has access to
       };
     }
   }
@@ -49,7 +50,7 @@ export const verifyToken = async (
     // Fetch user role, active status, and branch from database
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, is_active, branch_id')
+      .select('role, is_active, primary_branch_id')
       .eq('id', user.id)
       .single();
 
@@ -69,12 +70,35 @@ export const verifyToken = async (
       return res.status(403).json({ error: 'User account is inactive' });
     }
 
+    // Get primary branch ID
+    const primaryBranchId = userData.primary_branch_id;
+
+    // Fetch all branches user has access to
+    const { data: userBranches, error: branchError } = await supabase
+      .from('user_branches')
+      .select('branch_id')
+      .eq('user_id', user.id);
+
+    if (branchError) {
+      console.error('Error fetching user branches:', branchError);
+    }
+
+    // Build branch IDs array
+    let branchIds: string[] = [];
+    if (userBranches && userBranches.length > 0) {
+      branchIds = userBranches.map(ub => ub.branch_id);
+    } else if (primaryBranchId) {
+      // Fallback: use primary branch as the only accessible branch
+      branchIds = [primaryBranchId];
+    }
+
     // Attach user info to request
     req.user = {
       id: user.id,
       email: user.email!,
       role: userData.role,
-      branch_id: userData.branch_id,
+      primary_branch_id: primaryBranchId,
+      branch_ids: branchIds,
     };
 
     next();

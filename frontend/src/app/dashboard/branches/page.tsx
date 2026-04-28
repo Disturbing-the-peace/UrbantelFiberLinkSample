@@ -29,7 +29,6 @@ export default function BranchesPage() {
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [formData, setFormData] = useState<CreateBranchData>({
     name: '',
-    code: '',
     address: '',
     contact_number: '',
     email: '',
@@ -61,7 +60,6 @@ export default function BranchesPage() {
   // Filter branches based on search
   const filteredBranches = branches.filter(branch =>
     branch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    branch.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     branch.address?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -76,7 +74,6 @@ export default function BranchesPage() {
       setShowCreateModal(false);
       setFormData({
         name: '',
-        code: '',
         address: '',
         contact_number: '',
         email: '',
@@ -99,7 +96,6 @@ export default function BranchesPage() {
       setSubmitting(true);
       const updateData: UpdateBranchData = {
         name: formData.name,
-        code: formData.code,
         address: formData.address,
         contact_number: formData.contact_number,
         email: formData.email,
@@ -138,7 +134,6 @@ export default function BranchesPage() {
     setSelectedBranch(branch);
     setFormData({
       name: branch.name,
-      code: branch.code,
       address: branch.address || '',
       contact_number: branch.contact_number || '',
       email: branch.email || '',
@@ -218,7 +213,6 @@ export default function BranchesPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">{branch.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{branch.code}</p>
                 </div>
               </div>
               {branch.is_active ? (
@@ -308,19 +302,6 @@ export default function BranchesPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#00A191]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Branch Code *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#00A191]"
                 />
               </div>
@@ -419,19 +400,6 @@ export default function BranchesPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#00A191]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Branch Code *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#00A191]"
                 />
               </div>

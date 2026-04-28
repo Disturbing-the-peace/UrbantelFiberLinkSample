@@ -7,6 +7,9 @@
 CREATE TABLE branches (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(255) UNIQUE NOT NULL,
+  address TEXT,
+  contact_number VARCHAR(20),
+  email VARCHAR(255),
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -25,10 +28,10 @@ CREATE TRIGGER update_branches_updated_at
 -- ============================================================================
 -- INSERT DEFAULT BRANCHES
 -- ============================================================================
-INSERT INTO branches (name) VALUES
-  ('Davao Del Sur'),
-  ('Davao de Oro'),
-  ('Davao Oriental');
+INSERT INTO branches (name, address, contact_number, email) VALUES
+  ('Davao Del Sur', NULL, NULL, NULL),
+  ('Davao de Oro', NULL, NULL, NULL),
+  ('Davao Oriental', NULL, NULL, NULL);
 
 -- ============================================================================
 -- ADD BRANCH_ID TO USERS TABLE
