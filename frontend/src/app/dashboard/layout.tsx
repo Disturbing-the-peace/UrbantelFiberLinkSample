@@ -125,18 +125,18 @@ export default function DashboardLayout({
               <Link href="/dashboard/analytics" className="flex items-center gap-2">
                 <Image
                   src="/lobosw.png"
-                  alt="UrbanTel FiberLink"
+                  alt="NetHub"
                   width={40}
                   height={40}
                   className="object-contain"
                 />
-                <h1 className="text-xl font-bold whitespace-nowrap">UrbanTel FiberLink</h1>
+                <h1 className="text-xl font-bold whitespace-nowrap">NetHub</h1>
               </Link>
             ) : (
               <Link href="/dashboard/analytics" className="flex items-center justify-center">
                 <Image
                   src="/lobosw.png"
-                  alt="UrbanTel FiberLink"
+                  alt="NetHub"
                   width={40}
                   height={40}
                   className="object-contain"
@@ -185,12 +185,12 @@ export default function DashboardLayout({
               <Link href="/dashboard/analytics" className="lg:hidden flex items-center gap-2">
                 <Image
                   src="/lobosw.png"
-                  alt="UrbanTel FiberLink"
+                  alt="NetHub"
                   width={32}
                   height={32}
                   className="object-contain"
                 />
-                <h1 className="text-xl font-bold text-[#00A191] dark:text-[#00A191]">UrbanTel FiberLink</h1>
+                <h1 className="text-xl font-bold text-[#00A191] dark:text-[#00A191]">NetHub</h1>
               </Link>
             </div>
 
@@ -214,12 +214,12 @@ export default function DashboardLayout({
                   <Link href="/dashboard/analytics" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
                     <Image
                       src="/lobosw.png"
-                      alt="UrbanTel FiberLink"
+                      alt="NetHub"
                       width={32}
                       height={32}
                       className="object-contain"
                     />
-                    <h1 className="text-xl font-bold">UrbanTel FiberLink</h1>
+                    <h1 className="text-xl font-bold">NetHub</h1>
                   </Link>
                   <button onClick={() => setMobileMenuOpen(false)} className="text-white/80 hover:text-white">
                     <X size={24} />

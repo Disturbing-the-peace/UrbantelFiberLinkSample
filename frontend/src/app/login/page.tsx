@@ -363,7 +363,7 @@ function LoginPageContent() {
             />
           </div>
           <h2 className="text-4xl font-bold mb-6 text-gray-900 dark:text-white">
-            ISP Management System
+            Network Operations Hub
           </h2>
           <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
             Streamline your operations with our comprehensive platform for managing subscribers, applications, and network services.

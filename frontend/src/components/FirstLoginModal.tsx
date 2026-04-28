@@ -126,7 +126,7 @@ export default function FirstLoginModal({ onComplete }: FirstLoginModalProps) {
       }
       
       console.log('Successfully signed in with new password');
-      toast.success('Password updated successfully! Welcome to UrbanTel FiberLink.');
+      toast.success('Password updated successfully! Welcome to NetHub.');
       onComplete();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update password');

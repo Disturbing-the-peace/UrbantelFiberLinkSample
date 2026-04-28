@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UrbanTel FiberLink - User Manual</title>
+    <title>NetHub - User Manual</title>
     <style>
         @media print {
             @page {
@@ -12,19 +12,49 @@
             }
             body {
                 font-size: 11pt;
+                line-height: 1.8;
             }
             h1 {
                 page-break-before: always;
+                margin-top: 0;
+                padding-top: 20px;
             }
             h1:first-of-type {
                 page-break-before: avoid;
             }
-            .no-break {
+            h2 {
+                page-break-after: avoid;
+                margin-top: 25px;
+            }
+            h3, h4 {
+                page-break-after: avoid;
+            }
+            .no-break, .card, .step-card {
                 page-break-inside: avoid;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+            .feature-box, .warning-box, .info-box, .success-box {
+                page-break-inside: avoid;
+                margin: 15px 0;
+            }
+            ul, ol {
+                page-break-inside: avoid;
+            }
+            .cover {
+                page-break-after: always;
+            }
+            .toc {
+                page-break-after: always;
             }
             a {
                 color: #000;
                 text-decoration: none;
+            }
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
             }
         }
 
@@ -41,39 +71,42 @@
             max-width: 210mm;
             margin: 0 auto;
             padding: 20px;
-            background: #fff;
+            background: #f8f9fa;
         }
 
         .cover {
             text-align: center;
             padding: 100px 20px;
-            border-bottom: 3px solid #00A191;
+            background: linear-gradient(135deg, #00A191 0%, #008c7a 100%);
+            border-radius: 12px;
             margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 161, 145, 0.2);
         }
 
         .cover h1 {
             font-size: 48px;
-            color: #00A191;
+            color: #ffffff;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .cover .subtitle {
             font-size: 24px;
-            color: #666;
+            color: #e0f7f4;
             margin-bottom: 10px;
         }
 
         .cover .version {
             font-size: 16px;
-            color: #999;
+            color: #b3e5df;
             margin-top: 20px;
         }
 
         h1 {
             color: #00A191;
             font-size: 28px;
-            margin-top: 40px;
-            margin-bottom: 20px;
+            margin-top: 50px;
+            margin-bottom: 25px;
             padding-bottom: 10px;
             border-bottom: 2px solid #00A191;
         }
@@ -81,148 +114,366 @@
         h2 {
             color: #00A191;
             font-size: 22px;
-            margin-top: 30px;
-            margin-bottom: 15px;
+            margin-top: 35px;
+            margin-bottom: 18px;
         }
 
         h3 {
             color: #333;
             font-size: 18px;
-            margin-top: 20px;
-            margin-bottom: 10px;
+            margin-top: 25px;
+            margin-bottom: 12px;
         }
 
         h4 {
             color: #555;
             font-size: 16px;
-            margin-top: 15px;
-            margin-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
 
         p {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             text-align: justify;
+            line-height: 1.8;
         }
 
         ul, ol {
             margin-left: 30px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         li {
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            line-height: 1.8;
+        }
+
+        .icon-list {
+            list-style: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+
+        .icon-list li {
+            padding-left: 35px;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .icon-list li:before {
+            content: "●";
+            position: absolute;
+            left: 10px;
+            top: 0;
+            color: #00A191;
+            font-size: 20px;
+            line-height: 1.8;
+        }
+
+        .feature-box ul {
+            list-style: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+
+        .feature-box ul li {
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .feature-box ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #00A191;
+            font-weight: bold;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-primary {
+            background: #00A191;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
         }
 
         .toc {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
             margin-bottom: 40px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #00A191;
         }
 
         .toc h2 {
             margin-top: 0;
             color: #00A191;
+            font-size: 26px;
+            margin-bottom: 20px;
         }
 
         .toc ul {
             list-style: none;
             margin-left: 0;
+            padding-left: 0;
         }
 
         .toc li {
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .toc li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #00A191;
+            font-weight: bold;
+            line-height: 1.6;
         }
 
         .toc a {
-            color: #00A191;
+            color: #333;
             text-decoration: none;
+            transition: color 0.3s;
+            font-size: 15px;
         }
 
         .toc a:hover {
+            color: #00A191;
             text-decoration: underline;
         }
 
         .feature-box {
-            background: #f0f9f8;
-            border-left: 4px solid #00A191;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #f0f9f8 0%, #e0f7f4 100%);
+            border-left: 5px solid #00A191;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 161, 145, 0.1);
+        }
+
+        .feature-box h3 {
+            color: #00A191;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
         }
 
         .warning-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            border-left: 5px solid #ffc107;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(255, 193, 7, 0.15);
+        }
+
+        .warning-box strong {
+            color: #856404;
+            font-size: 16px;
         }
 
         .info-box {
-            background: #d1ecf1;
-            border-left: 4px solid #17a2b8;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #d1ecf1 0%, #b8e5ed 100%);
+            border-left: 5px solid #17a2b8;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(23, 162, 184, 0.15);
+        }
+
+        .info-box strong {
+            color: #0c5460;
+            font-size: 16px;
         }
 
         .success-box {
-            background: #d4edda;
-            border-left: 4px solid #28a745;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left: 5px solid #28a745;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.15);
+        }
+
+        .success-box strong {
+            color: #155724;
+            font-size: 16px;
         }
 
         code {
-            background: #f4f4f4;
-            padding: 2px 6px;
-            border-radius: 3px;
+            background: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
+            color: #e83e8c;
+            border: 1px solid #e9ecef;
         }
 
         pre {
-            background: #f4f4f4;
-            padding: 15px;
-            border-radius: 5px;
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
             overflow-x: auto;
-            margin: 15px 0;
+            margin: 20px 0;
+            line-height: 1.6;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            border: none;
+            color: #68d391;
+            font-size: 14px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 25px 0;
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
         th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
+            border: 1px solid #e9ecef;
+            padding: 16px;
             text-align: left;
+            line-height: 1.6;
         }
 
         th {
-            background: #00A191;
+            background: linear-gradient(135deg, #00A191 0%, #008c7a 100%);
             color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.5px;
         }
 
         tr:nth-child(even) {
-            background: #f9f9f9;
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #e9f7f5;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
         }
 
         .step-number {
             display: inline-block;
-            width: 30px;
-            height: 30px;
-            background: #00A191;
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #00A191 0%, #008c7a 100%);
             color: white;
             border-radius: 50%;
             text-align: center;
-            line-height: 30px;
-            margin-right: 10px;
+            line-height: 35px;
+            margin-right: 12px;
             font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 3px 8px rgba(0, 161, 145, 0.3);
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .card h2 {
+            color: #00A191;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 22px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .card h3 {
+            color: #00A191;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .step-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #00A191;
+        }
+
+        .step-card h3 {
+            color: #00A191;
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #00A191 0%, #008c7a 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 161, 145, 0.2);
+        }
+
+        .section-header h2 {
+            margin: 0;
+            color: white;
+            border: none;
+            padding: 0;
         }
 
         .footer {
@@ -244,7 +495,7 @@
 <body>
     <!-- Cover Page -->
     <div class="cover">
-        <h1>UrbanTel FiberLink</h1>
+        <h1>NetHub</h1>
         <div class="subtitle">User Manual</div>
         <div class="version">Version 2.0 | April 2026</div>
     </div>
@@ -271,46 +522,59 @@
 
     <!-- Introduction -->
     <h1 id="introduction">1. Introduction</h1>
-    <p>UrbanTel FiberLink is an Internet Service Provider (ISP) management system designed to streamline the process of managing fiber internet applications, agents, subscribers, and commissions across multiple branch locations.</p>
+    
+    <div class="card">
+        <p>NetHub is a comprehensive network operations management system designed to streamline the process of managing fiber internet applications, agents, subscribers, and commissions across multiple branch locations.</p>
+    </div>
 
     <div class="feature-box">
         <h3>Key Features</h3>
         <ul>
-            <li>✅ Multi-branch management</li>
-            <li>✅ Agent referral system</li>
-            <li>✅ Application tracking and status management</li>
-            <li>✅ Commission calculation and tracking</li>
-            <li>✅ Real-time analytics and reporting</li>
-            <li>✅ Event calendar management</li>
-            <li>✅ Role-based access control</li>
-            <li>✅ Dark mode support</li>
+            <li>Multi-branch management</li>
+            <li>Agent referral system</li>
+            <li>Application tracking and status management</li>
+            <li>Commission calculation and tracking</li>
+            <li>Real-time analytics and reporting</li>
+            <li>Event calendar management</li>
+            <li>Role-based access control</li>
+            <li>Dark mode support</li>
         </ul>
     </div>
 
     <!-- Getting Started -->
     <h1 id="getting-started">2. Getting Started</h1>
     
-    <h2>System Requirements</h2>
-    <ul>
-        <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
-        <li>Internet connection</li>
-        <li>Valid user credentials</li>
-    </ul>
+    <div class="card">
+        <h2>System Requirements</h2>
+        <div class="no-break">
+            <ul class="icon-list">
+                <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                <li>Internet connection</li>
+                <li>Valid user credentials</li>
+            </ul>
+        </div>
+    </div>
 
-    <h2>Accessing the System</h2>
-    <ol>
-        <li>Navigate to your system URL</li>
-        <li>Click "Login" or navigate to <code>/login</code></li>
-        <li>Enter your email and password</li>
-        <li>Complete 2FA verification if enabled</li>
-    </ol>
+    <div class="card">
+        <h2>Accessing the System</h2>
+        <div class="no-break">
+            <ol>
+                <li>Navigate to your system URL</li>
+                <li>Click "Login" or navigate to <code>/login</code></li>
+                <li>Enter your email and password</li>
+                <li>Complete 2FA verification if enabled</li>
+            </ol>
+        </div>
+    </div>
 
     <!-- Login & First-Time Setup -->
     <h1 id="login">3. Login & First-Time Setup</h1>
 
-    <h2>First Login Process</h2>
+    <div class="section-header">
+        <h2>First Login Process</h2>
+    </div>
     
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">1</span>Initial Login</h3>
         <ul>
             <li>Use the temporary password provided by your administrator</li>
@@ -318,7 +582,7 @@
         </ul>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">2</span>Change Password</h3>
         <ul>
             <li>Enter a new secure password (minimum 8 characters)</li>
@@ -327,7 +591,7 @@
         </ul>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">3</span>Onboarding Tour</h3>
         <ul>
             <li>After changing your password, an interactive tour will guide you through the system</li>
@@ -347,77 +611,103 @@
     <!-- Dashboard Overview -->
     <h1 id="dashboard">4. Dashboard Overview</h1>
 
-    <h2>Header</h2>
-    <ul>
-        <li><strong>Branch Badge:</strong> Shows your assigned branch (visible at all times)</li>
-        <li><strong>Theme Toggle:</strong> Switch between light and dark mode</li>
-        <li><strong>User Menu:</strong> Access profile, settings, and logout</li>
-    </ul>
+    <div class="card">
+        <h2>Header</h2>
+        <div class="no-break">
+            <ul class="icon-list">
+                <li><strong>Branch Badge:</strong> Shows your assigned branch (visible at all times)</li>
+                <li><strong>Theme Toggle:</strong> Switch between light and dark mode</li>
+                <li><strong>User Menu:</strong> Access profile, settings, and logout</li>
+            </ul>
+        </div>
+    </div>
 
-    <h2>Sidebar Navigation</h2>
-    <ul>
-        <li><strong>Analytics:</strong> View system metrics and reports</li>
-        <li><strong>Agents:</strong> Manage agent information</li>
-        <li><strong>Portal:</strong> Quick access to agent portal</li>
-        <li><strong>Applications:</strong> Process customer applications</li>
-        <li><strong>Subscribers:</strong> Manage active subscribers</li>
-        <li><strong>Commissions:</strong> Track and manage agent commissions</li>
-        <li><strong>Events:</strong> Calendar for important dates</li>
-    </ul>
+    <div class="card">
+        <h2>Sidebar Navigation</h2>
+        <div class="no-break">
+            <ul class="icon-list">
+                <li><strong>Analytics:</strong> View system metrics and reports</li>
+                <li><strong>Agents:</strong> Manage agent information</li>
+                <li><strong>Portal:</strong> Quick access to agent portal</li>
+                <li><strong>Applications:</strong> Process customer applications</li>
+                <li><strong>Subscribers:</strong> Manage active subscribers</li>
+                <li><strong>Commissions:</strong> Track and manage agent commissions</li>
+                <li><strong>Events:</strong> Calendar for important dates</li>
+            </ul>
+        </div>
+    </div>
 
     <!-- Agent Management -->
     <h1 id="agents">5. Agent Management</h1>
 
-    <h2>Creating a New Agent</h2>
-    <ol>
-        <li>Click <strong>"Create Agent"</strong> button</li>
-        <li>Fill in agent information:
-            <ul>
-                <li><strong>Name</strong> (required): Agent's full name</li>
-                <li><strong>Contact Number</strong> (optional): Phone number</li>
-                <li><strong>Email</strong> (optional): Email address</li>
-                <li><strong>Role:</strong> Select CBA, Team Leader, or Organic</li>
-                <li><strong>Team Leader</strong> (optional): Assign to a team leader</li>
-            </ul>
-        </li>
-        <li>Click <strong>"Create"</strong></li>
-    </ol>
+    <div class="card">
+        <h2>Creating a New Agent</h2>
+        <div class="no-break">
+            <ol>
+                <li>Click <strong>"Create Agent"</strong> button</li>
+                <li>Fill in agent information:
+                    <ul>
+                        <li><strong>Name</strong> (required): Agent's full name</li>
+                        <li><strong>Contact Number</strong> (optional): Phone number</li>
+                        <li><strong>Email</strong> (optional): Email address</li>
+                        <li><strong>Role:</strong> Select CBA, Team Leader, or Organic</li>
+                        <li><strong>Team Leader</strong> (optional): Assign to a team leader</li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Create"</strong></li>
+            </ol>
+        </div>
 
-    <div class="success-box">
-        <strong>Note:</strong> Agent is automatically assigned to your branch
+        <div class="success-box">
+            <strong>Note:</strong> Agent is automatically assigned to your branch
+        </div>
     </div>
 
-    <h2>Copying Referral Links</h2>
-    <ul>
-        <li><strong>Copy Referral Code:</strong> Click on the referral code</li>
-        <li><strong>Copy Full Link:</strong> Click the copy icon next to the code</li>
-    </ul>
+    <div class="card">
+        <h2>Copying Referral Links</h2>
+        <div class="no-break">
+            <ul class="icon-list">
+                <li><strong>Copy Referral Code:</strong> Click on the referral code</li>
+                <li><strong>Copy Full Link:</strong> Click the copy icon next to the code</li>
+            </ul>
+        </div>
+    </div>
 
-    <h2>Agent Filters</h2>
-    <ul>
-        <li><strong>Search:</strong> Name, email, referral code, or contact number</li>
-        <li><strong>Status:</strong> Active or Inactive</li>
-        <li><strong>Role:</strong> Team Leader, CBA, or Organic</li>
-        <li><strong>Team Leader:</strong> Filter by team leader</li>
-    </ul>
+    <div class="card">
+        <h2>Agent Filters</h2>
+        <div class="no-break">
+            <ul class="icon-list">
+                <li><strong>Search:</strong> Name, email, referral code, or contact number</li>
+                <li><strong>Status:</strong> Active or Inactive</li>
+                <li><strong>Role:</strong> Team Leader, CBA, or Organic</li>
+                <li><strong>Team Leader:</strong> Filter by team leader</li>
+            </ul>
+        </div>
+    </div>
 
     <!-- Application Management -->
     <h1 id="applications">6. Application Management</h1>
 
-    <h2>Viewing Applications</h2>
-    <ol>
-        <li>Navigate to <strong>Applications</strong> from the sidebar</li>
-        <li>View all applications in your branch</li>
-        <li>Filter by:
-            <ul>
-                <li>Status</li>
-                <li>Agent</li>
-                <li>Date range</li>
-            </ul>
-        </li>
-    </ol>
+    <div class="card">
+        <h2>Viewing Applications</h2>
+        <div class="no-break">
+            <ol>
+                <li>Navigate to <strong>Applications</strong> from the sidebar</li>
+                <li>View all applications in your branch</li>
+                <li>Filter by:
+                    <ul>
+                        <li>Status</li>
+                        <li>Agent</li>
+                        <li>Date range</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
 
-    <h2>Application Statuses</h2>
+    <div class="section-header">
+        <h2>Application Statuses</h2>
+    </div>
     <table>
         <thead>
             <tr>
@@ -457,9 +747,11 @@
         </tbody>
     </table>
 
-    <h2>Processing Applications: Step-by-Step</h2>
+    <div class="section-header">
+        <h2>Processing Applications: Step-by-Step</h2>
+    </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">1</span>Review New Application</h3>
         <ol>
             <li>Click on an application with <strong>"Submitted"</strong> status</li>
@@ -483,7 +775,7 @@
         </ol>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">2</span>Verify Information</h3>
         <ul>
             <li>Ensure all required documents are uploaded and clear</li>
@@ -494,7 +786,7 @@
         </ul>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">3</span>Update Status</h3>
         <p>Based on your review, update the application status:</p>
         
@@ -521,7 +813,7 @@
         </ol>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">4</span>Schedule Installation</h3>
         <ol>
             <li>For approved applications, coordinate with installation team</li>
@@ -531,7 +823,7 @@
         </ol>
     </div>
 
-    <div class="no-break">
+    <div class="step-card">
         <h3><span class="step-number">5</span>Activate Service (Elevate to Subscriber)</h3>
         <div class="success-box">
             <strong>This is the final step that converts an application into an active subscriber!</strong>
@@ -554,51 +846,56 @@
         </div>
     </div>
 
-    <h2>Application Documents</h2>
-    <p>View and download uploaded documents:</p>
-    <ul>
-        <li><strong>House Photo:</strong> Exterior view of installation location</li>
-        <li><strong>Government ID:</strong> Valid government-issued identification</li>
-        <li><strong>ID Selfie:</strong> Applicant holding their ID</li>
-        <li><strong>Proof of Billing:</strong> Utility bill or similar (Business plans)</li>
-        <li><strong>Proof of Income:</strong> Income verification (Business plans)</li>
-    </ul>
+    <div class="card">
+        <h2>Application Documents</h2>
+        <p>View and download uploaded documents:</p>
+    <div class="no-break">
+        <ul>
+            <li><strong>House Photo:</strong> Exterior view of installation location</li>
+            <li><strong>Government ID:</strong> Valid government-issued identification</li>
+            <li><strong>ID Selfie:</strong> Applicant holding their ID</li>
+            <li><strong>Proof of Billing:</strong> Utility bill or similar (Business plans)</li>
+            <li><strong>Proof of Income:</strong> Income verification (Business plans)</li>
+        </ul>
+    </div>
 
     <h2>Voiding an Application</h2>
     <p>If an application needs to be cancelled:</p>
-    <ol>
-        <li>Open the application</li>
-        <li>Change status to <strong>"Voided"</strong></li>
-        <li>Enter reason for voiding:
-            <ul>
-                <li>Customer request</li>
-                <li>Duplicate application</li>
-                <li>No longer interested</li>
-                <li>Other (specify)</li>
-            </ul>
-        </li>
-        <li>Click <strong>"Update Status"</strong></li>
-    </ol>
+    <div class="no-break">
+        <ol>
+            <li>Open the application</li>
+            <li>Change status to <strong>"Voided"</strong></li>
+            <li>Enter reason for voiding:
+                <ul>
+                    <li>Customer request</li>
+                    <li>Duplicate application</li>
+                    <li>No longer interested</li>
+                    <li>Other (specify)</li>
+                </ul>
+            </li>
+            <li>Click <strong>"Update Status"</strong></li>
+        </ol>
+    </div>
 
     <!-- Subscriber Management -->
-    <h1 id="subscribers">7. Subscriber Management</h1>
+    <h1 id="subscribers" style="margin-top: 30px;">7. Subscriber Management</h1>
 
-    <h2>Viewing Subscribers</h2>
-    <ol>
+    <h2 style="margin-top: 20px; margin-bottom: 10px;">Viewing Subscribers</h2>
+    <ol style="margin-bottom: 15px;">
         <li>Navigate to <strong>Subscribers</strong> from the sidebar</li>
         <li>View all activated applications (subscribers)</li>
         <li>Filter by agent, plan, or date range</li>
     </ol>
 
-    <h2>Exporting Data</h2>
-    <ol>
+    <h2 style="margin-top: 20px; margin-bottom: 10px;">Exporting Data</h2>
+    <ol style="margin-bottom: 15px;">
         <li>Click <strong>"Export"</strong> button</li>
         <li>Select filters (optional)</li>
         <li>Download CSV file with subscriber data</li>
     </ol>
 
-    <h2>Downloading Documents</h2>
-    <ol>
+    <h2 style="margin-top: 20px; margin-bottom: 10px;">Downloading Documents</h2>
+    <ol style="margin-bottom: 15px;">
         <li>Click on a subscriber</li>
         <li>Click <strong>"Download Documents"</strong> button</li>
         <li>ZIP file with all documents is downloaded</li>
@@ -618,11 +915,11 @@
         <tbody>
             <tr>
                 <td><strong>Pending</strong></td>
-                <td>Subscriber not yet activated (30 days)</td>
+                <td>Commission awaiting management approval</td>
             </tr>
             <tr>
                 <td><strong>Eligible</strong></td>
-                <td>Ready to be paid (after 30 days of activation)</td>
+                <td>Ready to be paid (approved by management)</td>
             </tr>
             <tr>
                 <td><strong>Paid</strong></td>
@@ -632,66 +929,76 @@
     </table>
 
     <h2>Commission Calculation</h2>
-    <ul>
-        <li>Commissions are automatically created when an application is activated</li>
-        <li>Amount is based on the plan's commission rate</li>
-        <li>Status changes to "Eligible" after 30 days</li>
-    </ul>
+    <div class="no-break">
+        <ul>
+            <li>Commissions are automatically created when an application is activated</li>
+            <li>Amount is based on the plan's commission rate</li>
+            <li>Status changes to "Eligible" when approved by management</li>
+        </ul>
+    </div>
 
     <h2>Updating Commission Status</h2>
-    <ol>
-        <li>Click on a commission</li>
-        <li>Change status to "Paid"</li>
-        <li>Enter payment date</li>
-        <li>Confirm with your password</li>
-    </ol>
+    <div class="no-break">
+        <ol>
+            <li>Click on a commission</li>
+            <li>Change status to "Paid"</li>
+            <li>Enter payment date</li>
+            <li>Confirm with your password</li>
+        </ol>
+    </div>
 
     <!-- Analytics & Reports -->
     <h1 id="analytics">9. Analytics & Reports</h1>
 
     <h2>Key Metrics</h2>
-    <ul>
-        <li><strong>Monthly Subscribers:</strong> Total subscribers this month</li>
-        <li><strong>Pending Applications:</strong> Applications awaiting processing</li>
-        <li><strong>Total Commissions Due:</strong> Eligible commissions to be paid</li>
-        <li><strong>Conversion Rate:</strong> Percentage of applications activated</li>
-    </ul>
+    <div class="no-break">
+        <ul>
+            <li><strong>Monthly Subscribers:</strong> Total subscribers this month</li>
+            <li><strong>Pending Applications:</strong> Applications awaiting processing</li>
+            <li><strong>Total Commissions Due:</strong> Eligible commissions to be paid</li>
+            <li><strong>Conversion Rate:</strong> Percentage of applications activated</li>
+        </ul>
+    </div>
 
     <div class="info-box">
         <strong>Note:</strong> All analytics show data for your assigned branch only.
     </div>
 
     <h2>Available Reports</h2>
-    <ul>
-        <li>Subscribers per Agent</li>
-        <li>Subscribers per Plan</li>
-        <li>Subscription Trends (12 months)</li>
-        <li>Pipeline Snapshot</li>
-        <li>Agent Rankings</li>
-        <li>Agent Conversion Rates</li>
-        <li>Commission Breakdown</li>
-        <li>Revenue Estimates</li>
-        <li>Growth Comparison</li>
-    </ul>
+    <div class="no-break">
+        <ul>
+            <li>Subscribers per Agent</li>
+            <li>Subscribers per Plan</li>
+            <li>Subscription Trends (12 months)</li>
+            <li>Pipeline Snapshot</li>
+            <li>Agent Rankings</li>
+            <li>Agent Conversion Rates</li>
+            <li>Commission Breakdown</li>
+            <li>Revenue Estimates</li>
+            <li>Growth Comparison</li>
+        </ul>
+    </div>
 
     <!-- Events Calendar -->
     <h1 id="events">10. Events Calendar</h1>
 
     <h2>Creating an Event</h2>
-    <ol>
-        <li>Click <strong>"Create Event"</strong> button or click on a date</li>
-        <li>Fill in event details:
-            <ul>
-                <li><strong>Title</strong> (required): Event name</li>
-                <li><strong>Description</strong> (optional): Event details</li>
-                <li><strong>Start Date & Time</strong> (required)</li>
-                <li><strong>End Date & Time</strong> (required)</li>
-                <li><strong>All Day</strong> (checkbox): For full-day events</li>
-                <li><strong>Color</strong> (optional): Event color for calendar</li>
-            </ul>
-        </li>
-        <li>Click <strong>"Create"</strong></li>
-    </ol>
+    <div class="no-break">
+        <ol>
+            <li>Click <strong>"Create Event"</strong> button or click on a date</li>
+            <li>Fill in event details:
+                <ul>
+                    <li><strong>Title</strong> (required): Event name</li>
+                    <li><strong>Description</strong> (optional): Event details</li>
+                    <li><strong>Start Date & Time</strong> (required)</li>
+                    <li><strong>End Date & Time</strong> (required)</li>
+                    <li><strong>All Day</strong> (checkbox): For full-day events</li>
+                    <li><strong>Color</strong> (optional): Event color for calendar</li>
+                </ul>
+            </li>
+            <li>Click <strong>"Create"</strong></li>
+        </ol>
+    </div>
 
     <!-- Portal Page -->
     <h1 id="portal">11. Agent Portal</h1>
@@ -714,7 +1021,7 @@
     <div class="no-break">
         <h3><span class="step-number">2</span>Agent Access</h3>
         <ol>
-            <li>Agents visit the portal URL (e.g., <code>https://your-domain.com/agent</code>)</li>
+            <li>Agents visit the portal URL (e.g., <code>https://ufl-sys.up.railway.app/agent</code>)</li>
             <li>They enter their unique referral code</li>
             <li>System displays their personalized dashboard</li>
         </ol>
@@ -771,8 +1078,8 @@
         <div class="warning-box">
             <strong>Commission Timeline:</strong>
             <ul>
-                <li><strong>Pending:</strong> First 30 days after activation</li>
-                <li><strong>Eligible:</strong> After 30 days, ready to be paid</li>
+                <li><strong>Pending:</strong> Awaiting management approval</li>
+                <li><strong>Eligible:</strong> Approved by management, ready to be paid</li>
                 <li><strong>Paid:</strong> Commission has been disbursed</li>
             </ul>
         </div>
@@ -825,8 +1132,10 @@
 
     <h2>Referral Link Format</h2>
     <p>Referral links follow this format:</p>
-    <pre><code>https://your-domain.com/agent/[REFERRAL_CODE]</code></pre>
-    <p>Example: <code>https://your-domain.com/agent/ABC123</code></p>
+    <div class="no-break">
+        <pre><code>https://ufl-sys.up.railway.app/agent/[REFERRAL_CODE]</code></pre>
+        <p>Example: <code>https://ufl-sys.up.railway.app/agent/ABC123</code></p>
+    </div>
 
     <div class="info-box">
         <strong>💡 Best Practice:</strong> Encourage agents to save their referral link in their phone's notes or messaging app for quick sharing with potential customers.
@@ -834,41 +1143,50 @@
 
     <h2>Viewing Location on Map</h2>
     <p>Both applicants and subscribers have clickable addresses:</p>
-    <ol>
-        <li>Click on any address in the Applicants or Subscribers tab</li>
-        <li>Interactive map opens showing the location</li>
-        <li>Map displays the customer's name and full address</li>
-        <li>Close the map by clicking the X button</li>
-    </ol>
+    <div class="no-break">
+        <ol>
+            <li>Click on any address in the Applicants or Subscribers tab</li>
+            <li>Interactive map opens showing the location</li>
+            <li>Map displays the customer's name and full address</li>
+            <li>Close the map by clicking the X button</li>
+        </ol>
+    </div>
 
     <h2>Portal Benefits</h2>
-    <ul>
-        <li>✅ No login required - agents use their referral code</li>
-        <li>✅ Real-time updates on applications and commissions</li>
-        <li>✅ Mobile-friendly design for on-the-go access</li>
-        <li>✅ Dark mode support for comfortable viewing</li>
-        <li>✅ Easy link sharing for customer acquisition</li>
-        <li>✅ Transparent commission tracking</li>
-    </ul>
+    <div class="no-break">
+        <ul>
+            <li>✅ No login required - agents use their referral code</li>
+            <li>✅ Real-time updates on applications and commissions</li>
+            <li>✅ Mobile-friendly design for on-the-go access</li>
+            <li>✅ Dark mode support for comfortable viewing</li>
+            <li>✅ Easy link sharing for customer acquisition</li>
+            <li>✅ Transparent commission tracking</li>
+        </ul>
+    </div>
 
     <!-- Profile Settings -->
     <h1 id="profile">12. Profile Settings</h1>
 
     <h2>Updating Profile</h2>
-    <ol>
-        <li>Click on your avatar in the top-right corner</li>
-        <li>Select <strong>"Profile"</strong> from the dropdown menu</li>
-        <li>Change your full name or upload a new profile picture</li>
-        <li>Click <strong>"Save Changes"</strong></li>
-    </ol>
+    <div class="no-break">
+        <ol>
+            <li>Click on your avatar in the top-right corner</li>
+            <li>Select <strong>"Profile"</strong> from the dropdown menu</li>
+            <li>Change your full name or upload a new profile picture</li>
+            <li>Click <strong>"Save Changes"</strong></li>
+        </ol>
+    </div>
 
     <h2>Changing Password</h2>
-    <ol>
-        <li>Go to <strong>Settings</strong> from user menu</li>
-        <li>Enter current password</li>
-        <li>Enter new password</li>
-        <li>Confirm new password</li>
-        <li>Click <strong>"Change Password"</strong></li>
+    <div class="no-break">
+        <ol>
+            <li>Go to <strong>Settings</strong> from user menu</li>
+            <li>Enter current password</li>
+            <li>Enter new password</li>
+            <li>Confirm new password</li>
+            <li>Click <strong>"Change Password"</strong></li>
+        </ol>
+    </div>i>Click <strong>"Change Password"</strong></li>
     </ol>
 
     <!-- Troubleshooting -->
@@ -876,54 +1194,64 @@
 
     <h2>Common Issues</h2>
 
-    <h3>Cannot Login</h3>
-    <ul>
-        <li>Verify email and password are correct</li>
-        <li>Check if account is active (contact your system administrator)</li>
-        <li>Clear browser cache and cookies</li>
-        <li>Try a different browser</li>
-    </ul>
+    <div class="no-break">
+        <h3>Cannot Login</h3>
+        <ul>
+            <li>Verify email and password are correct</li>
+            <li>Check if account is active (contact your system administrator)</li>
+            <li>Clear browser cache and cookies</li>
+            <li>Try a different browser</li>
+        </ul>
+    </div>
 
-    <h3>Not Seeing Expected Data</h3>
-    <ul>
-        <li>Check date range filters</li>
-        <li>Ensure you have proper permissions</li>
-        <li>Refresh the page</li>
-        <li>Contact your system administrator</li>
-    </ul>
+    <div class="no-break">
+        <h3>Not Seeing Expected Data</h3>
+        <ul>
+            <li>Check date range filters</li>
+            <li>Ensure you have proper permissions</li>
+            <li>Refresh the page</li>
+            <li>Contact your system administrator</li>
+        </ul>
+    </div>
 
-    <h3>Commission Not Showing as Eligible</h3>
-    <ul>
-        <li>Verify 30 days have passed since activation</li>
-        <li>Check that application status is "Activated"</li>
-        <li>Refresh the page</li>
-        <li>Contact your system administrator if issue persists</li>
-    </ul>
+    <div class="no-break">
+        <h3>Commission Not Showing as Eligible</h3>
+        <ul>
+            <li>Verify commission has been approved by management</li>
+            <li>Check that application status is "Activated"</li>
+            <li>Refresh the page</li>
+            <li>Contact your system administrator if issue persists</li>
+        </ul>
+    </div>
 
     <h2>Best Practices</h2>
 
-    <h3>Security</h3>
-    <ul>
-        <li>Use strong, unique passwords</li>
-        <li>Change passwords regularly</li>
-        <li>Never share passwords</li>
-        <li>Log out when finished</li>
-        <li>Don't leave system unattended</li>
-    </ul>
+    <div class="no-break">
+        <h3>Security</h3>
+        <ul>
+            <li>Use strong, unique passwords</li>
+            <li>Change passwords regularly</li>
+            <li>Never share passwords</li>
+            <li>Log out when finished</li>
+            <li>Don't leave system unattended</li>
+        </ul>
+    </div>
 
-    <h3>Data Management</h3>
-    <ul>
-        <li>Check pending applications daily</li>
-        <li>Process applications promptly</li>
-        <li>Update commission statuses regularly</li>
-        <li>Keep agent information up to date</li>
-        <li>Verify customer information before activation</li>
-    </ul>
+    <div class="no-break">
+        <h3>Data Management</h3>
+        <ul>
+            <li>Check pending applications daily</li>
+            <li>Process applications promptly</li>
+            <li>Update commission statuses regularly</li>
+            <li>Keep agent information up to date</li>
+            <li>Verify customer information before activation</li>
+        </ul>
+    </div>
 
     <!-- Footer -->
     <div class="footer">
         <hr>
-        <p><strong>UrbanTel FiberLink User Manual - Version 2.0</strong></p>
+        <p><strong>NetHub User Manual - Version 2.0</strong></p>
         <p>For additional support or questions, please contact your system administrator.</p>
         <p>© 2026 UrbanTel. All rights reserved.</p>
     </div>

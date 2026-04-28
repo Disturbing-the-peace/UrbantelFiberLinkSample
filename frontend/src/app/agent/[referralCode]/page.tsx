@@ -427,7 +427,7 @@ export default function AgentPortalPage() {
               </Link>
               <Image
                 src={resolvedTheme === 'dark' ? "/lobosw.png" : "/lobost.png"}
-                alt="UrbanTel FiberLink"
+                alt="NetHub"
                 width={50}
                 height={50}
                 className="object-contain"

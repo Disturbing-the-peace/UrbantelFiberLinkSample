@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ISP Management System",
-  description: "ISP application management system",
+  title: "NetHub - Network Operations Hub",
+  description: "Network operations management system for ISPs and telecommunications providers",
   icons: {
     icon: [
       { url: '/urbantel.ico' },

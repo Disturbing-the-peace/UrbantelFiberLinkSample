@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "nethub-backend",
   "version": "1.0.0",
-  "description": "UrbanConnect ISP System Backend API",
+  "description": "NetHub - Network Operations Management System Backend API",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon --watch src --exec ts-node src/index.ts",

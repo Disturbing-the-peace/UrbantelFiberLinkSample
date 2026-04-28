@@ -13,7 +13,7 @@ interface TourStep {
 
 const tourSteps: TourStep[] = [
   {
-    title: 'Welcome to UrbanTel FiberLink! 🎉',
+    title: 'Welcome to NetHub! 🎉',
     description: 'Let\'s take a quick tour of your dashboard. This will only take a minute!',
   },
   {
