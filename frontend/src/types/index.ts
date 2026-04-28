@@ -22,7 +22,7 @@ export interface User {
   branch_name?: string;
   primary_branch_id?: string;
   primary_branch_name?: string;
-  branches?: Branch[];
+  branches?: Array<{ id: string; name: string }>;
   profile_picture_url?: string;
   is_first_login?: boolean;
   onboarding_completed?: boolean;

@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Building2, X } from 'lucide-react';
-import { Branch } from '@/types';
 
 interface BranchBadgeProps {
   primaryBranchName?: string;
-  branches?: Branch[];
+  branches?: Array<{ id: string; name: string }>;
 }
 
 export default function BranchBadge({ primaryBranchName, branches }: BranchBadgeProps) {
@@ -102,11 +101,6 @@ export default function BranchBadge({ primaryBranchName, branches }: BranchBadge
                     <h3 className="font-medium text-gray-900 dark:text-white">
                       {branch.name}
                     </h3>
-                    {branch.address && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {branch.address}
-                      </p>
-                    )}
                   </div>
                   {primaryBranchName === branch.name && (
                     <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded">
