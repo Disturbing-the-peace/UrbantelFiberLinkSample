@@ -8,7 +8,7 @@ declare global {
       user?: {
         id: string;
         email: string;
-        role: 'admin' | 'superadmin';
+        role: 'admin' | 'superadmin' | 'system_administrator';
         primary_branch_id: string;
         branch_ids: string[]; // All branches user has access to
       };
@@ -121,7 +121,7 @@ export const checkAdmin = (
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  if (!['admin', 'superadmin'].includes(req.user.role)) {
+  if (!['admin', 'superadmin', 'system_administrator'].includes(req.user.role)) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
@@ -143,6 +143,46 @@ export const checkSuperadmin = (
 
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ error: 'Superadmin access required' });
+  }
+
+  next();
+};
+
+/**
+ * Middleware to check if user has system_administrator role
+ * Must be used after verifyToken middleware
+ */
+export const checkSystemAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (req.user.role !== 'system_administrator') {
+    return res.status(403).json({ error: 'System administrator access required' });
+  }
+
+  next();
+};
+
+/**
+ * Middleware to check if user has elevated privileges (superadmin or system_administrator)
+ * Must be used after verifyToken middleware
+ */
+export const checkElevatedAccess = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (!['superadmin', 'system_administrator'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Elevated access required' });
   }
 
   next();

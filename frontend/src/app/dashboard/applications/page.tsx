@@ -492,7 +492,7 @@ export default function ApplicationsPage() {
                           </svg>
                         )}
                       </button>
-                      {user?.role === 'superadmin' && (
+                      {(user?.role === 'superadmin' || user?.role === 'system_administrator') && (
                         <button
                           onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -595,7 +595,7 @@ export default function ApplicationsPage() {
                       </>
                     )}
                   </button>
-                  {user?.role === 'superadmin' && (
+                  {(user?.role === 'superadmin' || user?.role === 'system_administrator') && (
                     <button
                       onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
                       className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded transition-colors"

@@ -217,10 +217,12 @@ function UsersPageContent() {
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       user.role === 'superadmin'
                         ? 'bg-teal-100 text-teal-800'
+                        : user.role === 'system_administrator'
+                        ? 'bg-purple-100 text-purple-800'
                         : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {user.role}
+                    {user.role === 'system_administrator' ? 'System Admin' : user.role}
                   </span>
                 </td>
                 <td className="px-6 py-4">
@@ -336,10 +338,12 @@ function UsersPageContent() {
                     className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       user.role === 'superadmin'
                         ? 'bg-teal-100 text-teal-800'
+                        : user.role === 'system_administrator'
+                        ? 'bg-purple-100 text-purple-800'
                         : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {user.role}
+                    {user.role === 'system_administrator' ? 'System Admin' : user.role}
                   </span>
                   {user.branches && user.branches.length > 0 && (
                     <div className="flex flex-wrap gap-1">

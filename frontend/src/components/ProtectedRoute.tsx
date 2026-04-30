@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'superadmin';
+  requiredRole?: 'admin' | 'superadmin' | 'system_administrator';
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -25,8 +25,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       } else if (requiredRole && user.role !== requiredRole) {
         // Not authorized for this role
-        if (requiredRole === 'superadmin' && user.role === 'admin') {
-          // Admin trying to access superadmin route, redirect to dashboard
+        // System administrators have same access as superadmins
+        const hasElevatedAccess = user.role === 'superadmin' || user.role === 'system_administrator';
+        
+        if (requiredRole === 'superadmin' && !hasElevatedAccess) {
+          // Regular admin trying to access superadmin route, redirect to dashboard
           console.log('Admin accessing superadmin route, redirecting to dashboard');
           router.push('/dashboard');
         }
@@ -54,8 +57,16 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   // Check role authorization
+  // System administrators have same access as superadmins
+  const hasElevatedAccess = user.role === 'superadmin' || user.role === 'system_administrator';
+  
   if (requiredRole && user.role !== requiredRole) {
-    return null;
+    // Allow system administrators to access superadmin routes
+    if (requiredRole === 'superadmin' && !hasElevatedAccess) {
+      return null;
+    } else if (requiredRole !== 'superadmin') {
+      return null;
+    }
   }
 
   // User is authenticated and authorized

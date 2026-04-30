@@ -290,10 +290,12 @@ export default function ProfilePage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Role</p>
-                <p className="text-base text-gray-900 dark:text-gray-100 capitalize">{user.role}</p>
+                <p className="text-base text-gray-900 dark:text-gray-100 capitalize">{user.role === 'system_administrator' ? 'System Administrator' : user.role}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {user.role === 'superadmin' 
                     ? 'Full system access with all administrative privileges'
+                    : user.role === 'system_administrator'
+                    ? 'Full system access across all branches without branch membership'
                     : 'Standard administrative access'}
                 </p>
               </div>

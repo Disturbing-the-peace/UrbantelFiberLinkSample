@@ -36,8 +36,8 @@ export default function BranchesPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Check if user is superadmin
-  const isSuperadmin = user?.role === 'superadmin';
+  // Check if user is superadmin or system administrator
+  const isSuperadmin = user?.role === 'superadmin' || user?.role === 'system_administrator';
 
   // Fetch branches
   const fetchBranches = async () => {

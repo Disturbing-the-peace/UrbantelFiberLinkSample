@@ -9,7 +9,7 @@ import { clearCachedSession } from './api';
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'superadmin';
+  role: 'admin' | 'superadmin' | 'system_administrator';
   fullName: string;
   isActive: boolean;
   requires2FA: boolean;

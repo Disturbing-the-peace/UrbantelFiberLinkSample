@@ -91,7 +91,7 @@ export default function DashboardLayout({
     { name: 'Events', href: '/dashboard/events', icon: Calendar },
   ];
 
-  const adminNavigation = user?.role === 'superadmin' ? [
+  const adminNavigation = user?.role === 'superadmin' || user?.role === 'system_administrator' ? [
     { name: 'Branches', href: '/dashboard/branches', icon: Building2 },
     { name: 'Purge Logs', href: '/dashboard/purge-logs', icon: Trash2 },
     { name: 'Users', href: '/dashboard/users', icon: Settings },

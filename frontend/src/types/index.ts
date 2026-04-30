@@ -15,7 +15,7 @@ export interface Branch {
 export interface User {
   id: string;
   email: string;
-  role: 'superadmin' | 'admin';
+  role: 'superadmin' | 'admin' | 'system_administrator';
   full_name: string;
   is_active: boolean;
   branch_id?: string;
