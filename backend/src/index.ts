@@ -1,7 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { requestLogger } from './middleware/logger';
+// import { requestLogger } from './middleware/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth.routes';
 import agentsRoutes from './routes/agents.routes';
@@ -38,7 +38,7 @@ app.use(cors({
 // Increase body size limit to 50MB for image uploads
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(requestLogger);
+// app.use(requestLogger);
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {
