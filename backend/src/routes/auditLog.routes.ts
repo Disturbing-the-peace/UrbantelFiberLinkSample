@@ -1,19 +1,19 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { verifyToken, checkSuperadmin } from '../middleware/auth';
+import { verifyToken, checkElevatedAccess } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * GET /api/audit-logs
- * Get audit logs (superadmin only)
+ * Get audit logs (superadmin and system_administrator only)
  * Query params:
  * - action: filter by action type (e.g., 'DATA_PURGE')
  * - entity_type: filter by entity type (e.g., 'application')
  * - limit: number of records to return (default: 100)
  * - offset: pagination offset (default: 0)
  */
-router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.get('/', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { action, entity_type, limit = '100', offset = '0' } = req.query;
 
@@ -56,9 +56,9 @@ router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response
 
 /**
  * GET /api/audit-logs/:id
- * Get a specific audit log entry (superadmin only)
+ * Get a specific audit log entry (superadmin and system_administrator only)
  */
-router.get('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

@@ -17,24 +17,36 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   console.log('ProtectedRoute - loading:', loading, 'user:', user, 'pathname:', pathname);
 
   useEffect(() => {
-    console.log('ProtectedRoute useEffect - loading:', loading, 'user:', user);
+    console.log('ProtectedRoute useEffect - loading:', loading, 'user:', user, 'requiredRole:', requiredRole);
     if (!loading) {
       if (!user) {
         // Not authenticated, redirect to login
         console.log('No user, redirecting to login');
         router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-      } else if (requiredRole && user.role !== requiredRole) {
-        // Not authorized for this role
+      } else if (requiredRole) {
+        // Check role authorization
         // System administrators have same access as superadmins
         const hasElevatedAccess = user.role === 'superadmin' || user.role === 'system_administrator';
+        const isAuthorized = 
+          user.role === requiredRole || 
+          (requiredRole === 'superadmin' && hasElevatedAccess);
         
-        if (requiredRole === 'superadmin' && !hasElevatedAccess) {
-          // Regular admin trying to access superadmin route, redirect to dashboard
-          console.log('Admin accessing superadmin route, redirecting to dashboard');
+        console.log('Authorization check:', {
+          userRole: user.role,
+          requiredRole,
+          hasElevatedAccess,
+          isAuthorized
+        });
+        
+        if (!isAuthorized) {
+          // Not authorized for this role, redirect to dashboard
+          console.log(`User role ${user.role} not authorized for ${requiredRole}, redirecting to dashboard`);
           router.push('/dashboard');
+        } else {
+          console.log('User authenticated and authorized');
         }
       } else {
-        console.log('User authenticated and authorized');
+        console.log('User authenticated and authorized (no role requirement)');
       }
     }
   }, [user, loading, router, pathname, requiredRole]);
@@ -60,11 +72,20 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   // System administrators have same access as superadmins
   const hasElevatedAccess = user.role === 'superadmin' || user.role === 'system_administrator';
   
-  if (requiredRole && user.role !== requiredRole) {
-    // Allow system administrators to access superadmin routes
-    if (requiredRole === 'superadmin' && !hasElevatedAccess) {
-      return null;
-    } else if (requiredRole !== 'superadmin') {
+  console.log('Final authorization check:', {
+    userRole: user.role,
+    requiredRole,
+    hasElevatedAccess,
+    willRender: !requiredRole || user.role === requiredRole || (requiredRole === 'superadmin' && hasElevatedAccess)
+  });
+  
+  if (requiredRole) {
+    const isAuthorized = 
+      user.role === requiredRole || 
+      (requiredRole === 'superadmin' && hasElevatedAccess);
+    
+    if (!isAuthorized) {
+      console.log('Access denied, returning null');
       return null;
     }
   }

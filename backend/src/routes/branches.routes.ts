@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { verifyToken, checkAdmin, checkSuperadmin } from '../middleware/auth';
+import { verifyToken, checkAdmin, checkElevatedAccess } from '../middleware/auth';
 import { Branch } from '../types';
 
 const router = Router();
@@ -64,9 +64,9 @@ router.get('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
 
 /**
  * POST /api/branches
- * Create a new branch (superadmin only)
+ * Create a new branch (superadmin and system_administrator only)
  */
-router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.post('/', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { name } = req.body;
 
@@ -110,9 +110,9 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
 
 /**
  * PUT /api/branches/:id
- * Update a branch (superadmin only)
+ * Update a branch (superadmin and system_administrator only)
  */
-router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, is_active } = req.body;
@@ -163,7 +163,7 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
  * Soft delete a branch (superadmin only)
  * Sets is_active to false instead of deleting the record
  */
-router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

@@ -1,15 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { verifyToken, checkSuperadmin } from '../middleware/auth';
+import { verifyToken, checkElevatedAccess } from '../middleware/auth';
 import { User } from '../types';
 
 const router = Router();
 
 /**
  * POST /api/users
- * Create a new admin user account (superadmin only)
+ * Create a new admin user account (superadmin and system_administrator only)
  */
-router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.post('/', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { email, full_name, role, password, primary_branch_id, branch_ids } = req.body;
 
@@ -96,9 +96,9 @@ router.post('/', verifyToken, checkSuperadmin, async (req: Request, res: Respons
 
 /**
  * GET /api/users
- * List all users (superadmin only)
+ * List all users (superadmin and system_administrator only)
  */
-router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.get('/', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { is_active, role, branch_id } = req.query;
 
@@ -138,9 +138,9 @@ router.get('/', verifyToken, checkSuperadmin, async (req: Request, res: Response
 
 /**
  * GET /api/users/:id
- * Get a single user by ID (superadmin only)
+ * Get a single user by ID (superadmin and system_administrator only)
  */
-router.get('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -163,9 +163,9 @@ router.get('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
 
 /**
  * PUT /api/users/:id
- * Update a user (superadmin only)
+ * Update a user (superadmin and system_administrator only)
  */
-router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { full_name, role, is_active, email, primary_branch_id, branch_ids } = req.body;
@@ -290,7 +290,7 @@ router.put('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Respo
  * Deactivate a user (superadmin only)
  * Sets is_active to false instead of deleting the record
  */
-router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -339,7 +339,7 @@ router.delete('/:id', verifyToken, checkSuperadmin, async (req: Request, res: Re
  * Reset a user's password to default (superadmin only)
  * Sets password to '123123123'
  */
-router.post('/:id/reset-password', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.post('/:id/reset-password', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -405,7 +405,7 @@ router.post('/:id/reset-password', verifyToken, checkSuperadmin, async (req: Req
  * Permanently delete a user (superadmin only)
  * Removes user from both Auth and database
  */
-router.delete('/:id/permanent', verifyToken, checkSuperadmin, async (req: Request, res: Response) => {
+router.delete('/:id/permanent', verifyToken, checkElevatedAccess, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
