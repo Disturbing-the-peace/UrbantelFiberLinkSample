@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Agent } from '@/types';
-import { agentsApi } from '@/lib/api';
+import { agentsApi, getAccessToken } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -26,17 +26,29 @@ export default function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [roleFilter, setRoleFilter] = useState<'all' | 'Team Leader' | 'CBA' | 'Organic'>('all');
   const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
+  const [branchFilter, setBranchFilter] = useState<string>('all');
+  
+  // Branches state
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
   
   const toast = useToast();
+  const { user } = useAuth();
+
+  // Check if user is superadmin or system administrator
+  const hasElevatedAccess = user?.role === 'superadmin' || user?.role === 'system_administrator';
 
   useEffect(() => {
     fetchAgents();
+    if (hasElevatedAccess) {
+      fetchBranches();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasElevatedAccess]);
 
   // Apply filters whenever agents or filter states change
   useEffect(() => {
@@ -78,9 +90,14 @@ export default function AgentsPage() {
       }
     }
 
+    // Branch filter (client-side, for additional filtering if needed)
+    if (branchFilter !== 'all') {
+      filtered = filtered.filter(agent => agent.branch_id === branchFilter);
+    }
+
     setFilteredAgents(filtered);
     setCurrentPage(1); // Reset to page 1 when filters change
-  }, [agents, searchQuery, statusFilter, roleFilter, teamLeaderFilter]);
+  }, [agents, searchQuery, statusFilter, roleFilter, teamLeaderFilter, branchFilter]);
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
@@ -93,7 +110,9 @@ export default function AgentsPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await agentsApi.getAll();
+      // Pass branch filter to API if elevated user has selected a branch
+      const branchIdParam = hasElevatedAccess && branchFilter !== 'all' ? branchFilter : undefined;
+      const data = await agentsApi.getAll(branchIdParam);
       setAgents(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch agents';
@@ -103,6 +122,37 @@ export default function AgentsPage() {
       setLoading(false);
     }
   };
+
+  const fetchBranches = async () => {
+    try {
+      setLoadingBranches(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.56:5000'}/api/branches`, {
+        headers: {
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch branches');
+      }
+      
+      const data = await response.json();
+      setBranches(data);
+    } catch (err) {
+      console.error('Error fetching branches:', err);
+      toast.error('Failed to load branches');
+    } finally {
+      setLoadingBranches(false);
+    }
+  };
+
+  // Refetch agents when branch filter changes
+  useEffect(() => {
+    if (hasElevatedAccess) {
+      fetchAgents();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchFilter]);
 
   const handleCreateAgent = () => {
     setEditingAgent(null);
@@ -251,7 +301,7 @@ export default function AgentsPage() {
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 mb-4 transition-colors duration-300 border border-[#C9B8EC]">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           {/* Search */}
           <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -270,6 +320,28 @@ export default function AgentsPage() {
               </svg>
             </div>
           </div>
+
+          {/* Branch Filter - Only for superadmin and system_administrator */}
+          {hasElevatedAccess && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Branch
+              </label>
+              <select
+                value={branchFilter}
+                onChange={(e) => setBranchFilter(e.target.value)}
+                disabled={loadingBranches}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00A191] bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="all">All Branches</option>
+                {branches.map(branch => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Status Filter */}
           <div>
@@ -328,7 +400,7 @@ export default function AgentsPage() {
         </div>
 
         {/* Clear Filters */}
-        {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || teamLeaderFilter !== 'all') && (
+        {(searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || teamLeaderFilter !== 'all' || branchFilter !== 'all') && (
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Showing {filteredAgents.length} of {agents.length} agents
@@ -339,6 +411,7 @@ export default function AgentsPage() {
                 setStatusFilter('all');
                 setRoleFilter('all');
                 setTeamLeaderFilter('all');
+                setBranchFilter('all');
               }}
               className="text-sm text-[#00A191] hover:text-[#008c7d] font-medium"
             >
@@ -367,6 +440,11 @@ export default function AgentsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Name
                 </th>
+                {hasElevatedAccess && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+                    Branch
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                   Role
                 </th>
@@ -391,6 +469,13 @@ export default function AgentsPage() {
                     <div className="text-sm font-medium text-gray-900 dark:text-white">{agent.name}</div>
                     {agent.email && <div className="text-sm text-gray-500 dark:text-gray-400">{agent.email}</div>}
                   </td>
+                  {hasElevatedAccess && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {agent.branches?.name || 'N/A'}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap">
                     {agent.role ? (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200">
@@ -502,6 +587,15 @@ export default function AgentsPage() {
               </div>
 
               <div className="space-y-2 mb-3">
+                {hasElevatedAccess && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-20">Branch:</span>
+                    <span className="text-sm text-gray-900 dark:text-white">
+                      {agent.branches?.name || 'N/A'}
+                    </span>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400 w-20">Role:</span>
                   {agent.role ? (

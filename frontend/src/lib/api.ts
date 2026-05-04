@@ -67,9 +67,12 @@ export async function apiRequest<T>(
  * Agent API methods
  */
 export const agentsApi = {
-  getAll: () => cachedFetch(
-    'agents:all',
-    () => apiRequest<any[]>('/api/agents'),
+  getAll: (branchId?: string) => cachedFetch(
+    branchId ? `agents:branch:${branchId}` : 'agents:all',
+    () => {
+      const url = branchId ? `/api/agents?branch_id=${branchId}` : '/api/agents';
+      return apiRequest<any[]>(url);
+    },
     5 * 60 * 1000 // Cache for 5 minutes
   ),
   getById: (id: string) => apiRequest<any>(`/api/agents/${id}`),

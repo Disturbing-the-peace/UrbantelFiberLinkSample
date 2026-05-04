@@ -108,10 +108,11 @@ router.post('/', verifyToken, checkAdmin, async (req: Request, res: Response) =>
  * GET /api/agents
  * List all agents (admin and superadmin)
  * Superadmins see all branches, admins see only their branch
+ * Query params: is_active, branch_id
  */
 router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => {
   try {
-    const { is_active } = req.query;
+    const { is_active, branch_id } = req.query;
 
     let query = supabase
       .from('agents')
@@ -120,6 +121,11 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
 
     // Apply branch filtering based on user role
     query = applyBranchFilter(query, req);
+
+    // Additional branch filter for superadmins/system_administrators
+    if (branch_id && typeof branch_id === 'string') {
+      query = query.eq('branch_id', branch_id);
+    }
 
     // Filter by active status if provided
     if (is_active !== undefined) {
