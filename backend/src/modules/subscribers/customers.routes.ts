@@ -16,6 +16,7 @@ router.post('/applications', async (req: Request, res: Response) => {
       lastName,
       birthday,
       phoneNumber,
+      email,
       address,
       latitude,
       longitude,
@@ -25,7 +26,7 @@ router.post('/applications', async (req: Request, res: Response) => {
     } = req.body;
 
     // Validate required fields
-    if (!firstName || !lastName || !birthday || !phoneNumber || !address || !planId || !agentRef) {
+    if (!firstName || !lastName || !birthday || !phoneNumber || !email || !address || !planId || !agentRef) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -36,12 +37,16 @@ router.post('/applications', async (req: Request, res: Response) => {
     // Validate agent referral code
     const { data: agent, error: agentError } = await supabase
       .from('agents')
-      .select('id, is_active')
+      .select('id, is_active, branch_id')
       .eq('referral_code', agentRef)
       .single();
 
     if (agentError || !agent) {
-      return res.status(400).json({ error: 'Invalid referral code' });
+      console.error('Agent lookup error:', agentError);
+      return res.status(400).json({ 
+        error: 'Invalid referral code',
+        details: agentError?.message 
+      });
     }
 
     if (!agent.is_active) {
@@ -91,18 +96,25 @@ router.post('/applications', async (req: Request, res: Response) => {
         last_name: lastName,
         birthday,
         contact_number: phoneNumber,
+        email: email || null,
         address,
         latitude: latitude || null,
         longitude: longitude || null,
         agent_id: agent.id,
         plan_id: planId,
+        branch_id: agent.branch_id || null,
         status: 'Submitted',
       })
       .select()
       .single();
 
     if (applicationError || !application) {
-      return res.status(500).json({ error: 'Failed to create application' });
+      console.error('Error creating application:', applicationError);
+      return res.status(500).json({ 
+        error: 'Failed to create application',
+        details: applicationError?.message || 'Unknown error',
+        code: applicationError?.code
+      });
     }
 
     // Upload images to Supabase Storage
