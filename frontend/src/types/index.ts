@@ -41,6 +41,10 @@ export interface Agent {
   role?: string;
   team_leader_id?: string;
   branch_id?: string;
+  branches?: {
+    id: string;
+    name: string;
+  };
   is_active: boolean;
   created_at: string;
   updated_at: string;
