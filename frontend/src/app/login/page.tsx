@@ -6,8 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/contexts/ToastContext';
 import { signIn, verify2FA, listMFAFactors, getAuthErrorMessage } from '@/lib/auth';
-import ThemeToggle from '@/components/ThemeToggle';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import ThemeToggle from '@/components/common/ThemeToggle';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Image from 'next/image';
 
 function LoginPageContent() {

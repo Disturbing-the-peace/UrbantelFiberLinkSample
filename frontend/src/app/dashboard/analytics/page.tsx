@@ -5,10 +5,10 @@ import dynamic from 'next/dynamic';
 import { analyticsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { dataCache } from '@/lib/cache';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Dynamically import the map component to avoid SSR issues
-const SubscriberMap = dynamic(() => import('@/components/SubscriberMap'), {
+const SubscriberMap = dynamic(() => import('@/features/map/components/SubscriberMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[500px] bg-gray-100 rounded-lg flex items-center justify-center">

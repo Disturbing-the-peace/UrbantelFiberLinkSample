@@ -1,12 +1,12 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import UserMenu from '@/components/UserMenu';
-import ThemeToggle from '@/components/ThemeToggle';
-import BranchBadge from '@/components/BranchBadge';
-import FirstLoginModal from '@/components/FirstLoginModal';
-import OnboardingTour from '@/components/OnboardingTour';
+import ProtectedRoute from '@/features/auth/components/ProtectedRoute';
+import UserMenu from '@/components/layout/UserMenu';
+import ThemeToggle from '@/components/common/ThemeToggle';
+import BranchBadge from '@/features/branches/components/BranchBadge';
+import FirstLoginModal from '@/features/auth/components/FirstLoginModal';
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';

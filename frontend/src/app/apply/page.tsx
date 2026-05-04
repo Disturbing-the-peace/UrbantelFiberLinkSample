@@ -4,8 +4,8 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Plan } from '@/types';
-import LocationPicker, { LocationData } from '@/components/LocationPicker';
-import ImageUpload from '@/components/ImageUpload';
+import LocationPicker, { LocationData } from '@/features/map/components/LocationPicker';
+import ImageUpload from '@/components/common/ImageUpload';
 import { plansApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 

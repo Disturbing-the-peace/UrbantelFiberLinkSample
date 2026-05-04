@@ -5,9 +5,9 @@ import { Agent } from '@/types';
 import { agentsApi } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import DeleteAgentModal from '@/components/DeleteAgentModal';
-import Pagination from '@/components/Pagination';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import DeleteAgentModal from '@/features/agents/components/DeleteAgentModal';
+import Pagination from '@/components/common/Pagination';
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);

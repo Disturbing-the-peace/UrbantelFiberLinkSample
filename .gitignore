@@ -10,3 +10,9 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Documentation (internal use only)
+REFACTORING_*.md
+TEST_RESULTS.md
+USER_MANUAL.html
+backend/src/migrations/MIGRATION_GUIDE.md

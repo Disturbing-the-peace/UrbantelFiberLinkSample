@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/features/auth/components/ProtectedRoute';
 import { usersApi, getAccessToken } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/contexts/AuthContext';
-import DeleteUserModal from '@/components/DeleteUserModal';
-import Pagination from '@/components/Pagination';
+import DeleteUserModal from '@/features/users/components/DeleteUserModal';
+import Pagination from '@/components/common/Pagination';
 
 export default function UsersPage() {
   return (

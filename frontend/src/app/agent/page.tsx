@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
-import ThemeToggle from '@/components/ThemeToggle';
+import ThemeToggle from '@/components/common/ThemeToggle';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
 import { QrCode, X, Download } from 'lucide-react';

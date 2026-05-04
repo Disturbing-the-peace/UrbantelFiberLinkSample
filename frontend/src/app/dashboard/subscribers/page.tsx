@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { subscribersApi, agentsApi, plansApi, exportApi } from '@/lib/api';
 import { Agent, Plan } from '@/types';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Pagination from '@/components/Pagination';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import Pagination from '@/components/common/Pagination';
 import 'leaflet/dist/leaflet.css';
 
 // Dynamically import map components to avoid SSR issues

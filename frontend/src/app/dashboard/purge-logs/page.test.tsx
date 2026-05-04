@@ -4,7 +4,7 @@ import PurgeLogsPage from './page';
 import { apiRequest } from '@/lib/api';
 
 // Mock ProtectedRoute to render children directly
-jest.mock('@/components/ProtectedRoute', () => {
+jest.mock('@/features/auth/components/ProtectedRoute', () => {
   return function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   };

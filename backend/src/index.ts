@@ -1,23 +1,24 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import { requestLogger } from './middleware/logger';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import authRoutes from './routes/auth.routes';
-import agentsRoutes from './routes/agents.routes';
-import plansRoutes from './routes/plans.routes';
-import customersRoutes from './routes/customers.routes';
-import subscribersRoutes from './routes/subscribers.routes';
-import commissionsRoutes from './routes/commissions.routes';
-import analyticsRoutes from './routes/analytics.routes';
-import exportRoutes from './routes/export.routes';
-import applicationsRoutes from './routes/applications.routes';
-import auditLogRoutes from './routes/auditLog.routes';
-import usersRoutes from './routes/users.routes';
-import documentsRoutes from './routes/documents.routes';
-import eventsRoutes from './routes/events.routes';
-import branchesRoutes from './routes/branches.routes';
-import { dataPurgeService } from './services/dataPurge.service';
+import { requestLogger } from './shared/middleware/logger';
+import { errorHandler, notFoundHandler } from './shared/middleware/errorHandler';
+import { logger } from './shared/utils/logger';
+import authRoutes from './modules/auth/auth.routes';
+import agentsRoutes from './modules/agents/agents.routes';
+import plansRoutes from './modules/plans/plans.routes';
+import customersRoutes from './modules/subscribers/customers.routes';
+import subscribersRoutes from './modules/subscribers/subscribers.routes';
+import commissionsRoutes from './modules/commissions/commissions.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import exportRoutes from './modules/export/export.routes';
+import applicationsRoutes from './modules/applications/applications.routes';
+import auditLogRoutes from './modules/audit-logs/auditLog.routes';
+import usersRoutes from './modules/users/users.routes';
+import documentsRoutes from './modules/documents/documents.routes';
+import eventsRoutes from './modules/events/events.routes';
+import branchesRoutes from './modules/branches/branches.routes';
+import { dataPurgeService } from './shared/services/dataPurge.service';
 
 dotenv.config();
 
@@ -38,7 +39,7 @@ app.use(cors({
 // Increase body size limit to 50MB for image uploads
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-// app.use(requestLogger);
+app.use(requestLogger);
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {
@@ -66,10 +67,8 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Accessible at:`);
-  console.log(`  - http://localhost:${PORT}`);
-  console.log(`  - http://192.168.1.56:${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   
   // Start data purge scheduler
   dataPurgeService.startScheduler();

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { commissionsApi, agentsApi } from '@/lib/api';
 import { Agent } from '@/types';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Pagination from '@/components/Pagination';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import Pagination from '@/components/common/Pagination';
 
 interface Commission {
   id: string;

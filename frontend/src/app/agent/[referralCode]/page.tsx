@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
-import ThemeToggle from '@/components/ThemeToggle';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import ThemeToggle from '@/components/common/ThemeToggle';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Copy } from 'lucide-react';
@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic';
 // @ts-ignore - Dynamic import type resolution issue
 const MapModal = dynamic(
   // @ts-ignore
-  () => import('@/components/MapModal'),
+  () => import('@/features/map/components/MapModal'),
   { ssr: false }
 ) as React.ComponentType<{
   address: string;

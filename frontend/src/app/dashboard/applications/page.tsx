@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Application, Agent } from '@/types';
 import { applicationsApi, agentsApi, exportApi } from '@/lib/api';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Pagination from '@/components/Pagination';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import Pagination from '@/components/common/Pagination';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 

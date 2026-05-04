@@ -4,7 +4,7 @@ import { User } from '@/types';
 import { ToastProvider } from '@/contexts/ToastContext';
 
 // Mock ProtectedRoute to render children directly
-jest.mock('@/components/ProtectedRoute', () => {
+jest.mock('@/features/auth/components/ProtectedRoute', () => {
   return function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   };
