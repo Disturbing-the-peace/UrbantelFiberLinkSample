@@ -302,7 +302,7 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
 
 /**
  * DELETE /api/applications/:id
- * Permanently delete an application (superadmin only)
+ * Permanently delete an application (superadmin and system_administrator only)
  * WARNING: This action cannot be undone
  */
 router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
@@ -310,9 +310,9 @@ router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
     const { id } = req.params;
     const user = (req as any).user;
 
-    // Only superadmins can delete applications
-    if (user.role !== 'superadmin') {
-      return res.status(403).json({ error: 'Only superadmins can delete applications' });
+    // Only superadmins and system_administrators can delete applications
+    if (!['superadmin', 'system_administrator'].includes(user.role)) {
+      return res.status(403).json({ error: 'Only superadmins and system administrators can delete applications' });
     }
 
     // Check if application exists

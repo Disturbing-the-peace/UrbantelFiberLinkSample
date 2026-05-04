@@ -130,7 +130,7 @@ export const checkAdmin = (
 };
 
 /**
- * Middleware to check if user has superadmin role
+ * Middleware to check if user has superadmin or system_administrator role
  * Must be used after verifyToken middleware
  */
 export const checkSuperadmin = (
@@ -142,8 +142,8 @@ export const checkSuperadmin = (
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ error: 'Superadmin access required' });
+  if (!['superadmin', 'system_administrator'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Superadmin or system administrator access required' });
   }
 
   next();

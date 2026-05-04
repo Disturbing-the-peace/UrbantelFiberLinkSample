@@ -290,8 +290,8 @@ router.put('/:id', verifyToken, checkAdmin, async (req: Request, res: Response) 
     }
     if (is_active !== undefined) updates.is_active = is_active;
     
-    // Only superadmins can change branch
-    if (branch_id !== undefined && req.user!.role === 'superadmin') {
+    // Only superadmins and system_administrators can change branch
+    if (branch_id !== undefined && ['superadmin', 'system_administrator'].includes(req.user!.role)) {
       updates.branch_id = branch_id;
     }
 
