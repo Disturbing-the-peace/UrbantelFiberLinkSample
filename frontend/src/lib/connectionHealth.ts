@@ -26,9 +26,11 @@ export function isConnectionStale(): boolean {
 /**
  * Check if connection appears stale (for logging/monitoring)
  */
+import { logger } from '@/lib/logger';
+
 export function resetIfStale(): boolean {
   if (isConnectionStale()) {
-    console.log('[ConnectionHealth] Connection appears stale - consider refreshing the page');
+    logger.log('[ConnectionHealth] Connection appears stale - consider refreshing the page');
     return true;
   }
   return false;
@@ -59,14 +61,14 @@ export async function testConnection(): Promise<boolean> {
     ]);
     
     if (error) {
-      console.error('[ConnectionHealth] Connection test failed:', error);
+      logger.error('[ConnectionHealth] Connection test failed:', error);
       return false;
     }
     
     markRequestSuccess();
     return true;
   } catch (error) {
-    console.error('[ConnectionHealth] Connection test error:', error);
+    logger.error('[ConnectionHealth] Connection test error:', error);
     return false;
   }
 }

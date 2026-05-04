@@ -137,19 +137,19 @@ export const getCurrentUser = async (): Promise<User | null> => {
       detailsPromise,
       detailsTimeoutPromise
     ]).catch((err) => {
-      console.error('[getCurrentUser] User details fetch failed:', err);
+      logger.error('[getCurrentUser] User details fetch failed:', err);
       return null;
     });
     
     if (!userDetails) {
-      console.error('[getCurrentUser] Failed to get user details');
+      logger.error('[getCurrentUser] Failed to get user details');
       return null;
     }
     
-    console.log('[getCurrentUser] Successfully fetched user:', userDetails.email);
+    logger.log('[getCurrentUser] Successfully fetched user:', userDetails.email);
     return userDetails;
   } catch (error) {
-    console.error('[getCurrentUser] Unexpected error:', error);
+    logger.error('[getCurrentUser] Unexpected error:', error);
     return null;
   }
 };
@@ -159,7 +159,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
  */
 export const getUserDetails = async (userId: string): Promise<User | null> => {
   try {
-    console.log('[getUserDetails] Fetching for user ID:', userId);
+    logger.log('[getUserDetails] Fetching for user ID:', userId);
     const supabase = getSupabaseClient();
     
     // Try to fetch from user_auth_status view (new schema)
@@ -213,7 +213,7 @@ export const getUserDetails = async (userId: string): Promise<User | null> => {
       created_at: data.created_at,
     };
   } catch (error) {
-    console.error('[getUserDetails] Unexpected error:', error);
+    logger.error('[getUserDetails] Unexpected error:', error);
     return null;
   }
 };

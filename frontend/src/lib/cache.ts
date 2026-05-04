@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 /**
  * Simple in-memory cache for API responses
  * Prevents unnecessary refetching when navigating between pages
@@ -114,12 +116,12 @@ export async function cachedFetch<T>(
   // Check cache first
   const cached = dataCache.get<T>(key);
   if (cached !== null) {
-    console.log(`[Cache] Hit: ${key}`);
+    logger.log(`[Cache] Hit: ${key}`);
     return cached;
   }
 
   // Fetch fresh data
-  console.log(`[Cache] Miss: ${key} - fetching...`);
+  logger.log(`[Cache] Miss: ${key} - fetching...`);
   const data = await fetcher();
   
   // Store in cache
