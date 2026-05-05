@@ -5,6 +5,7 @@
 
 import { getSupabaseClient } from './supabase';
 import { clearCachedSession } from './api';
+import { logger } from './logger';
 
 export interface User {
   id: string;
