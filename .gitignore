@@ -16,3 +16,6 @@ REFACTORING_*.md
 TEST_RESULTS.md
 USER_MANUAL.html
 backend/src/migrations/MIGRATION_GUIDE.md
+
+# Markdown documentation folder
+markdown/
