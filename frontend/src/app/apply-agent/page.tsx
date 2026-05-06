@@ -118,7 +118,12 @@ function AgentApplicationFormContent() {
     setFirstName(value);
     if (validationErrors.firstName) {
       const error = validateName(value, 'First Name');
-      setValidationErrors(prev => ({ ...prev, firstName: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, firstName: error }));
+      } else {
+        const { firstName, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
@@ -126,7 +131,12 @@ function AgentApplicationFormContent() {
     setLastName(value);
     if (validationErrors.lastName) {
       const error = validateName(value, 'Last Name');
-      setValidationErrors(prev => ({ ...prev, lastName: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, lastName: error }));
+      } else {
+        const { lastName, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
@@ -134,7 +144,12 @@ function AgentApplicationFormContent() {
     setBirthday(value);
     if (validationErrors.birthday) {
       const error = validateBirthday(value);
-      setValidationErrors(prev => ({ ...prev, birthday: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, birthday: error }));
+      } else {
+        const { birthday, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
@@ -144,7 +159,12 @@ function AgentApplicationFormContent() {
     setPhoneNumber(numbersOnly);
     if (validationErrors.phoneNumber) {
       const error = validatePhoneNumber(numbersOnly);
-      setValidationErrors(prev => ({ ...prev, phoneNumber: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, phoneNumber: error }));
+      } else {
+        const { phoneNumber, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
@@ -152,7 +172,12 @@ function AgentApplicationFormContent() {
     setEmail(value);
     if (validationErrors.email) {
       const error = validateEmail(value);
-      setValidationErrors(prev => ({ ...prev, email: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, email: error }));
+      } else {
+        const { email, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
@@ -160,7 +185,12 @@ function AgentApplicationFormContent() {
     setAddress(value);
     if (validationErrors.address) {
       const error = !value.trim() ? 'Address is required' : undefined;
-      setValidationErrors(prev => ({ ...prev, address: error }));
+      if (error) {
+        setValidationErrors(prev => ({ ...prev, address: error }));
+      } else {
+        const { address, ...rest } = validationErrors;
+        setValidationErrors(rest);
+      }
     }
   };
 
