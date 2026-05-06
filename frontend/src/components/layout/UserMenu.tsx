@@ -30,18 +30,35 @@ export default function UserMenu() {
 
   if (!user) return null;
 
-  // Get initials from email
-  const getInitials = (email: string) => {
-    const parts = email.split('@')[0].split('.');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
+  // Get initials from full name or email
+  const getInitials = (fullName?: string, email?: string) => {
+    if (fullName) {
+      const nameParts = fullName.trim().split(' ');
+      if (nameParts.length >= 2) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+      }
+      return fullName.substring(0, 2).toUpperCase();
     }
-    return email.substring(0, 2).toUpperCase();
+    
+    // Fallback to email if no full name
+    if (email) {
+      const parts = email.split('@')[0].split('.');
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.substring(0, 2).toUpperCase();
+    }
+    
+    return 'U';
   };
 
-  // Get display name from email
-  const getDisplayName = (email: string) => {
-    const name = email.split('@')[0];
+  // Get display name - use full name if available, otherwise extract from email
+  const getDisplayName = () => {
+    if (user.fullName) {
+      return user.fullName;
+    }
+    // Fallback to email-based name
+    const name = user.email.split('@')[0];
     return name
       .split('.')
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
@@ -57,13 +74,15 @@ export default function UserMenu() {
       >
         {/* Avatar */}
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-          {getInitials(user.email)}
+          {getInitials(user.fullName, user.email)}
         </div>
         
         {/* User Info */}
         <div className="hidden md:block text-left">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">{getDisplayName(user.email)}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role}</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">{getDisplayName()}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+            {user.role === 'system_administrator' ? 'System Administrator' : user.role}
+          </p>
         </div>
         
         {/* Chevron */}
@@ -79,16 +98,16 @@ export default function UserMenu() {
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-base shadow-md">
-                {getInitials(user.email)}
+                {getInitials(user.fullName, user.email)}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {getDisplayName(user.email)}
+                  {getDisplayName()}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="inline-block px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 rounded-full capitalize">
-                    {user.role}
+                    {user.role === 'system_administrator' ? 'System Administrator' : user.role}
                   </span>
                 </div>
               </div>

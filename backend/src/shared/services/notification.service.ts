@@ -147,7 +147,7 @@ export class NotificationService {
     planName: string,
     statusReason: string | undefined,
     customer: NotificationRecipient,
-    agent: NotificationRecipient
+    agent?: NotificationRecipient
   ): Promise<void> {
     // Only send notifications for terminal statuses
     const notifiableStatuses = ['Activated', 'Denied', 'Voided'];
@@ -193,21 +193,25 @@ export class NotificationService {
       }
     });
 
-    // Send notification to agent
-    logger.log(`[Notification Service] Sending ${status} notification to agent: ${agent.name}`);
-    const agentResults = await this.sendNotification({
-      recipient: agent,
-      message: agentMessage,
-    });
+    // Send notification to agent (if exists - not for system applications)
+    if (agent) {
+      logger.log(`[Notification Service] Sending ${status} notification to agent: ${agent.name}`);
+      const agentResults = await this.sendNotification({
+        recipient: agent,
+        message: agentMessage,
+      });
 
-    // Log agent notification results
-    agentResults.forEach(result => {
-      if (result.success) {
-        logger.log(`[Notification Service] Agent notification sent via ${result.channel}`);
-      } else {
-        logger.error(`[Notification Service] Failed to send agent notification via ${result.channel}: ${result.error}`);
-      }
-    });
+      // Log agent notification results
+      agentResults.forEach(result => {
+        if (result.success) {
+          logger.log(`[Notification Service] Agent notification sent via ${result.channel}`);
+        } else {
+          logger.error(`[Notification Service] Failed to send agent notification via ${result.channel}: ${result.error}`);
+        }
+      });
+    } else {
+      logger.log(`[Notification Service] No agent for this application (system application) - skipping agent notification`);
+    }
   }
 }
 

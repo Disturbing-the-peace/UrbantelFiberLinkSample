@@ -3,7 +3,7 @@ import { supabase } from '../../shared/config/supabase';
 import { verifyToken, checkAdmin } from '../../shared/middleware/auth';
 import { applyBranchFilter } from '../../shared/middleware/branchFilter';
 import { Application } from '../../types';
-import { notificationService } from '../../shared/services/notification.service';
+import { notificationService, NotificationRecipient } from '../../shared/services/notification.service';
 import { createCommissionForActivation } from '../commissions/commissions.routes';
 
 const router = Router();
@@ -233,8 +233,8 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
       return res.status(500).json({ error: 'Failed to update application status' });
     }
 
-    // Create commission record if status is Activated
-    if (status === 'Activated' && updatedApp.plans?.price) {
+    // Create commission record if status is Activated AND has agent
+    if (status === 'Activated' && updatedApp.agent_id && updatedApp.plans?.price) {
       try {
         const commission = await createCommissionForActivation(
           updatedApp.agent_id,
@@ -268,12 +268,12 @@ router.put('/:id/status', verifyToken, checkAdmin, async (req: Request, res: Res
           email: updatedApp.email,
         };
 
-        // Prepare agent recipient info
-        const agent = {
-          name: updatedApp.agents?.name || 'Unknown Agent',
-          phone: updatedApp.agents?.contact_number,
-          email: updatedApp.agents?.email,
-        };
+        // Prepare agent recipient info (if agent exists)
+        const agent: NotificationRecipient | undefined = updatedApp.agents ? {
+          name: updatedApp.agents.name || 'Unknown Agent',
+          phone: updatedApp.agents.contact_number,
+          email: updatedApp.agents.email,
+        } : undefined;
 
         // Send notifications (non-blocking)
         notificationService.sendStatusChangeNotification(

@@ -450,7 +450,9 @@ export default function ApplicationsPage() {
                     <div className="text-xs text-gray-500 dark:text-gray-400">{application.plans?.speed}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">{application.agents?.name}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">
+                      {application.agents?.name || <span className="text-gray-500 italic">System</span>}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -552,7 +554,9 @@ export default function ApplicationsPage() {
                   
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 dark:text-gray-400 w-16">Agent:</span>
-                    <span className="text-sm text-gray-900 dark:text-white">{application.agents?.name}</span>
+                    <span className="text-sm text-gray-900 dark:text-white">
+                      {application.agents?.name || <span className="text-gray-500 italic">System</span>}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
