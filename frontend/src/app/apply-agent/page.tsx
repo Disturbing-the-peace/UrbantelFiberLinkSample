@@ -24,6 +24,9 @@ function AgentApplicationFormContent() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [useManualAddress, setUseManualAddress] = useState(false);
 
   // Documents
   const [uploadedDocs, setUploadedDocs] = useState<{
@@ -42,9 +45,11 @@ function AgentApplicationFormContent() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showGcashExample, setShowGcashExample] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // Validate referrer code on mount
   useEffect(() => {
+    setIsClient(true);
     const validateReferrer = async () => {
       if (referrerCode) {
         try {
@@ -192,6 +197,69 @@ function AgentApplicationFormContent() {
         setValidationErrors(rest);
       }
     }
+  };
+
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data.display_name) {
+        return data.display_name;
+      }
+      
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    } catch (error) {
+      console.error('Reverse geocoding failed:', error);
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation not supported by your browser');
+      setUseManualAddress(true);
+      return;
+    }
+
+    setIsLoadingLocation(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const addressText = await reverseGeocode(latitude, longitude);
+        setAddress(addressText);
+        setIsLoadingLocation(false);
+        toast.success('Location captured successfully');
+      },
+      (error) => {
+        let errorMessage = 'Unable to retrieve your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enter manually.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location unavailable. Please enter manually.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out. Please enter manually.';
+            break;
+        }
+        
+        setLocationError(errorMessage);
+        setIsLoadingLocation(false);
+        setUseManualAddress(true);
+      },
+      {
+        enableHighAccuracy: false, // Use false for faster response
+        timeout: 30000, // 30 seconds
+        maximumAge: 60000, // Accept cached position up to 1 minute old
+      }
+    );
   };
 
   const handleSubmit = async () => {
@@ -541,16 +609,63 @@ function AgentApplicationFormContent() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Address <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    value={address}
-                    onChange={(e) => handleAddressChange(e.target.value)}
-                    required
-                    rows={3}
-                    className={`w-full px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      validationErrors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                    }`}
-                    placeholder="Enter your complete address"
-                  />
+                  
+                  {/* Auto-grab location button */}
+                  {!useManualAddress && isClient && (window.location.protocol === 'https:' || window.location.hostname === 'localhost') && (
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      disabled={isLoadingLocation}
+                      className="w-full mb-3 px-4 py-3 bg-[#00A191] text-white rounded-lg hover:bg-[#008c7a] transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoadingLocation ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Getting your location...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>Use My Current Location</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Location error */}
+                  {locationError && (
+                    <div className="mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                      <p className="text-sm text-red-800 dark:text-red-200">{locationError}</p>
+                    </div>
+                  )}
+
+                  {/* Manual address input or toggle */}
+                  {!useManualAddress && !address && (
+                    <button
+                      type="button"
+                      onClick={() => setUseManualAddress(true)}
+                      className="w-full mb-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                    >
+                      Enter address manually instead
+                    </button>
+                  )}
+
+                  {/* Show textarea only if manual mode or address already filled */}
+                  {(useManualAddress || address) && (
+                    <textarea
+                      value={address}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      required
+                      rows={3}
+                      className={`w-full px-4 py-3 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        validationErrors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      }`}
+                      placeholder="Enter your complete address"
+                    />
+                  )}
                   {validationErrors.address && (
                     <p className="mt-1 text-xs text-red-600 dark:text-red-400 flex items-center">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
