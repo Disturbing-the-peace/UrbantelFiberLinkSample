@@ -392,6 +392,7 @@ export default function AgentApplicationsPage() {
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               totalItems={filteredApplications.length}
+              itemsPerPage={ITEMS_PER_PAGE}
             />
           )}
         </div>
