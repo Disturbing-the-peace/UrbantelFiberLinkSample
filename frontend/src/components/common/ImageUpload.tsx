@@ -38,10 +38,23 @@ export default function ImageUpload({
       return;
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // Check if it's an image or document
+    const isImage = file.type.startsWith('image/');
+    const isDocument = file.type === 'application/pdf' || 
+                       file.type === 'application/msword' || 
+                       file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    // Validate file type based on accept prop
+    if (accept.includes('image') && !isImage && !isDocument) {
       setError('Please select a valid image file');
       return;
+    }
+
+    if (accept.includes('.pdf') || accept.includes('.doc')) {
+      if (!isImage && !isDocument) {
+        setError('Please select a valid file (PDF, DOCX, or image)');
+        return;
+      }
     }
 
     // Validate file size (before compression)
@@ -52,6 +65,16 @@ export default function ImageUpload({
     }
 
     setError(null);
+
+    // If it's a document (PDF/DOCX), don't compress, just pass it through
+    if (isDocument) {
+      const previewUrl = URL.createObjectURL(file);
+      setPreview(previewUrl);
+      onImageChange(name, file);
+      return;
+    }
+
+    // If it's an image, compress it
     setIsCompressing(true);
 
     try {
@@ -148,11 +171,21 @@ export default function ImageUpload({
         
         {preview && (
           <div className="relative">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-24 h-24 object-cover rounded-md border-2 border-green-500"
-            />
+            {accept.includes('.pdf') || accept.includes('.doc') ? (
+              // Document preview
+              <div className="w-24 h-24 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-md border-2 border-green-500">
+                <svg className="w-12 h-12 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+              </div>
+            ) : (
+              // Image preview
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-24 h-24 object-cover rounded-md border-2 border-green-500"
+              />
+            )}
             <button
               type="button"
               onClick={handleRemove}

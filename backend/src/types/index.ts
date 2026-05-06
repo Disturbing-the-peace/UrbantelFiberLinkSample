@@ -128,3 +128,32 @@ export interface Event {
   created_at: string;
   updated_at: string;
 }
+
+export interface Referrer {
+  id: string;
+  name: string;
+  referral_code: string;
+  contact_number?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentApplication {
+  id: string;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  birthday: string;
+  contact_number: string;
+  email?: string;
+  address: string;
+  resume_url?: string;
+  valid_id_url?: string;
+  barangay_clearance_url?: string;
+  gcash_screenshot_url?: string;
+  referred_by_referrer_id?: string;
+  created_at: string;
+  updated_at: string;
+}

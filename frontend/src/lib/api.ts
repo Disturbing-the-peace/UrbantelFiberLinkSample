@@ -504,3 +504,63 @@ export const authApi = {
     method: 'POST',
   }),
 };
+
+/**
+ * Referrers API methods
+ */
+export const referrersApi = {
+  getAll: () => apiRequest<any[]>('/api/referrers'),
+  getById: (id: string) => apiRequest<any>(`/api/referrers/${id}`),
+  getByCode: (referralCode: string) => apiRequest<any>(`/api/referrers/by-code/${referralCode}`, {
+    requiresAuth: false, // Public validation
+  }),
+  create: (data: {
+    name: string;
+    contact_number?: string;
+    email?: string;
+  }) => apiRequest<any>('/api/referrers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id: string, data: {
+    name?: string;
+    referral_code?: string;
+    contact_number?: string;
+    email?: string;
+    is_active?: boolean;
+  }) => apiRequest<any>(`/api/referrers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: (id: string) => apiRequest<any>(`/api/referrers/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+/**
+ * Agent Applications API methods
+ */
+export const agentApplicationsApi = {
+  getAll: (params?: {
+    start_date?: string;
+    end_date?: string;
+    referred_by_referrer_id?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.start_date) queryParams.append('start_date', params.start_date);
+    if (params?.end_date) queryParams.append('end_date', params.end_date);
+    if (params?.referred_by_referrer_id) queryParams.append('referred_by_referrer_id', params.referred_by_referrer_id);
+    
+    const query = queryParams.toString();
+    return apiRequest<any[]>(`/api/agent-applications${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => apiRequest<any>(`/api/agent-applications/${id}`),
+  create: (data: any) => apiRequest<any>('/api/agent-applications', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    requiresAuth: false, // Public submission
+  }),
+  delete: (id: string) => apiRequest<any>(`/api/agent-applications/${id}`, {
+    method: 'DELETE',
+  }),
+};

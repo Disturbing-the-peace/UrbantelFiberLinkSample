@@ -23,7 +23,8 @@ import {
   Settings,
   Calendar,
   Globe,
-  Building2
+  Building2,
+  UserPlus
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -84,6 +85,7 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { name: 'Agents', href: '/dashboard/agents', icon: Users },
+    { name: 'Agent Applications', href: '/dashboard/agent-applications', icon: UserPlus },
     { name: 'Portal', href: '/dashboard/portal', icon: Globe },
     { name: 'Applications', href: '/dashboard/applications', icon: FileText },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: UserCheck },
@@ -92,6 +94,7 @@ export default function DashboardLayout({
   ];
 
   const adminNavigation = user?.role === 'superadmin' || user?.role === 'system_administrator' ? [
+    { name: 'Referrers', href: '/dashboard/referrers', icon: Users },
     { name: 'Branches', href: '/dashboard/branches', icon: Building2 },
     { name: 'Purge Logs', href: '/dashboard/purge-logs', icon: Trash2 },
     { name: 'Users', href: '/dashboard/users', icon: Settings },
