@@ -46,7 +46,9 @@ export default function ApplicationsPage() {
   const teamLeaders = agents.filter(agent => agent.role === 'Team Leader' && agent.is_active);
   
   // Get agents filtered by team leader
-  const filteredAgentsByTeamLeader = teamLeaderFilter
+  const filteredAgentsByTeamLeader = teamLeaderFilter === 'system'
+    ? [] // No agents under system
+    : teamLeaderFilter
     ? agents.filter(agent => agent.team_leader_id === teamLeaderFilter && agent.is_active)
     : agents.filter(agent => agent.is_active);
 
@@ -76,7 +78,7 @@ export default function ApplicationsPage() {
       fetchApplications();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, agentFilter, startDate, endDate]);
+  }, [statusFilter, agentFilter, teamLeaderFilter, startDate, endDate]);
   
   // Reset agent filter when team leader changes
   useEffect(() => {
@@ -105,7 +107,14 @@ export default function ApplicationsPage() {
       } = {};
       
       if (statusFilter) params.status = statusFilter;
-      if (agentFilter) params.agent_id = agentFilter;
+      
+      // Handle system filter (direct applications with no agent)
+      if (teamLeaderFilter === 'system') {
+        params.agent_id = 'system';
+      } else if (agentFilter) {
+        params.agent_id = agentFilter;
+      }
+      
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
 
@@ -317,6 +326,7 @@ export default function ApplicationsPage() {
                 className="w-full px-2 md:px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Team Leaders</option>
+                <option value="system">System (Direct Applications)</option>
                 {teamLeaders.map((leader) => (
                   <option key={leader.id} value={leader.id}>
                     {leader.name}
