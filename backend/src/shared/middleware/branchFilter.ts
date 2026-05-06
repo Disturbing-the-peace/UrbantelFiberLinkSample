@@ -24,9 +24,9 @@ export function applyBranchFilter<T>(
     return query;
   }
   
-  // If user is admin, filter by their accessible branches
+  // If user is admin, filter by their accessible branches OR NULL (system applications)
   if (req.user?.role === 'admin' && req.user?.branch_ids && req.user.branch_ids.length > 0) {
-    return query.in(branchIdColumn, req.user.branch_ids);
+    return query.or(`${branchIdColumn}.in.(${req.user.branch_ids.join(',')}),${branchIdColumn}.is.null`);
   }
   
   return query;
