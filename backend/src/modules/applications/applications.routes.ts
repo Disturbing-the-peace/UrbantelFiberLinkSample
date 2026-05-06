@@ -57,7 +57,12 @@ router.get('/', verifyToken, checkAdmin, async (req: Request, res: Response) => 
 
     // Filter by agent
     if (agent_id && typeof agent_id === 'string') {
-      query = query.eq('agent_id', agent_id);
+      if (agent_id === 'system') {
+        // Filter for system applications (no agent)
+        query = query.is('agent_id', null);
+      } else {
+        query = query.eq('agent_id', agent_id);
+      }
     }
 
     // Filter by date range
