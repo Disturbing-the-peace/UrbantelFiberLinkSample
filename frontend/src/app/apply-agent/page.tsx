@@ -15,6 +15,8 @@ function AgentApplicationFormContent() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [docStep, setDocStep] = useState(1); // Track document upload sub-steps
+  const [hasClearance, setHasClearance] = useState<boolean | null>(null); // null = not asked yet
   
   // Personal Info
   const [firstName, setFirstName] = useState('');
@@ -44,7 +46,6 @@ function AgentApplicationFormContent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [showGcashExample, setShowGcashExample] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   // Validate referrer code on mount
@@ -327,6 +328,39 @@ function AgentApplicationFormContent() {
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const nextDocStep = () => {
+    if (docStep === 1 && !uploadedDocs.resume) {
+      toast.error('Please upload your resume');
+      return;
+    }
+    if (docStep === 2 && !uploadedDocs.validId) {
+      toast.error('Please upload your valid ID');
+      return;
+    }
+    if (docStep === 3 && hasClearance === null) {
+      toast.error('Please select if you have a barangay clearance');
+      return;
+    }
+    if (docStep === 3 && hasClearance && !uploadedDocs.barangayClearance) {
+      toast.error('Please upload your barangay clearance');
+      return;
+    }
+    if (docStep === 4 && !uploadedDocs.gcashScreenshot) {
+      toast.error('Please upload your GCash screenshot');
+      return;
+    }
+    
+    if (docStep < 4) {
+      setDocStep(docStep + 1);
+    }
+  };
+
+  const prevDocStep = () => {
+    if (docStep > 1) {
+      setDocStep(docStep - 1);
     }
   };
 
@@ -681,59 +715,175 @@ function AgentApplicationFormContent() {
             {/* Step 2: Documents */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Resume (PDF or DOCX) <span className="text-red-500">*</span>
-                  </label>
-                  <ImageUpload
-                    name="resume"
-                    label="Upload Resume"
-                    onImageChange={handleDocChange}
-                    accept=".pdf,.doc,.docx"
-                  />
-                </div>
+                {/* Document Step 1: Resume */}
+                {docStep === 1 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Step 1: Upload Your Resume
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Please upload your resume in PDF or DOCX format.
+                    </p>
+                    <ImageUpload
+                      name="resume"
+                      label="Upload Resume (PDF or DOCX)"
+                      onImageChange={handleDocChange}
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Valid ID with 3 Signatures <span className="text-red-500">*</span>
-                  </label>
-                  <ImageUpload
-                    name="validId"
-                    label="Upload Valid ID"
-                    onImageChange={handleDocChange}
-                    accept="image/*"
-                  />
-                </div>
+                {/* Document Step 2: Valid ID */}
+                {docStep === 2 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Step 2: Upload Your Valid ID
+                    </h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-2">
+                        📝 Important Instructions:
+                      </p>
+                      <ul className="text-sm text-blue-700 dark:text-blue-300 list-disc list-inside space-y-1">
+                        <li>Place your valid ID on a white paper</li>
+                        <li>Add 3 signatures on the paper around the ID</li>
+                        <li>Take a clear photo of the ID with the signatures</li>
+                      </ul>
+                    </div>
+                    
+                    {/* Example image */}
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Example of Valid ID with 3 signatures:
+                      </p>
+                      <img 
+                        src="/sample 1.jpg" 
+                        alt="Valid ID with 3 signatures example" 
+                        className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                      />
+                    </div>
+                    
+                    <ImageUpload
+                      name="validId"
+                      label="Upload Valid ID (with 3 signatures on paper)"
+                      onImageChange={handleDocChange}
+                      accept="image/*"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Barangay Clearance (Optional)
-                  </label>
-                  <ImageUpload
-                    name="barangayClearance"
-                    label="Upload Barangay Clearance"
-                    onImageChange={handleDocChange}
-                    accept="image/*"
-                  />
-                </div>
+                {/* Document Step 3: Barangay Clearance (Optional) */}
+                {docStep === 3 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Step 3: Barangay Clearance (Optional)
+                    </h3>
+                    
+                    {hasClearance === null ? (
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Do you have a barangay clearance you'd like to upload? This is optional and not required for your application.
+                        </p>
+                        <div className="flex gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setHasClearance(true)}
+                            className="flex-1 px-6 py-3 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700"
+                          >
+                            Yes, I have one
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHasClearance(false)}
+                            className="flex-1 px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500"
+                          >
+                            No, skip this
+                          </button>
+                        </div>
+                      </div>
+                    ) : hasClearance ? (
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Great! Please upload your barangay clearance.
+                        </p>
+                        <ImageUpload
+                          name="barangayClearance"
+                          label="Upload Barangay Clearance"
+                          onImageChange={handleDocChange}
+                          accept="image/*"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHasClearance(null);
+                            setUploadedDocs(prev => ({ ...prev, barangayClearance: null }));
+                          }}
+                          className="mt-3 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
+                        >
+                          Actually, I don't have one
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            No problem! You can proceed without a barangay clearance.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setHasClearance(null)}
+                          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 underline"
+                        >
+                          Changed my mind, I have one
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    GCash Verified Screenshot <span className="text-red-500">*</span>
-                  </label>
-                  <ImageUpload
-                    name="gcashScreenshot"
-                    label="Upload GCash Screenshot"
-                    onImageChange={handleDocChange}
-                    accept="image/*"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowGcashExample(true)}
-                    className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
-                  >
-                    View example of GCash verified screenshot
-                  </button>
+                {/* Document Step 4: GCash Screenshot */}
+                {docStep === 4 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Step 4: GCash Verified Screenshot
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Please upload a screenshot showing your verified GCash account.
+                    </p>
+                    
+                    {/* Example image embedded */}
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Example of GCash verified screenshot:
+                      </p>
+                      <img 
+                        src="/gcash sample.png" 
+                        alt="GCash Verified Example" 
+                        className="w-full max-w-xs mx-auto rounded border border-gray-300 dark:border-gray-600"
+                      />
+                    </div>
+                    
+                    <ImageUpload
+                      name="gcashScreenshot"
+                      label="Upload GCash Verified Screenshot"
+                      onImageChange={handleDocChange}
+                      accept="image/*"
+                    />
+                  </div>
+                )}
+
+                {/* Document progress indicator */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <span>Document Upload Progress</span>
+                    <span>{docStep} of 4</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                    <div 
+                      className="bg-teal-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(docStep / 4) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -741,17 +891,33 @@ function AgentApplicationFormContent() {
 
           {/* Navigation Buttons */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 bg-gray-50 dark:bg-gray-700 flex justify-between">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
+            {currentStep === 1 ? (
+              <button
+                onClick={prevStep}
+                disabled={true}
+                className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+            ) : (
+              <button
+                onClick={docStep === 1 ? prevStep : prevDocStep}
+                className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500"
+              >
+                Previous
+              </button>
+            )}
 
             {currentStep < 2 ? (
               <button
                 onClick={nextStep}
+                className="px-6 py-3 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700"
+              >
+                Next
+              </button>
+            ) : docStep < 4 ? (
+              <button
+                onClick={nextDocStep}
                 className="px-6 py-3 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700"
               >
                 Next
@@ -768,44 +934,6 @@ function AgentApplicationFormContent() {
           </div>
         </div>
       </div>
-
-      {/* GCash Example Modal */}
-      {showGcashExample && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowGcashExample(false)}
-        >
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-lg p-4 sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                GCash Verified Screenshot Example
-              </h3>
-              <button
-                onClick={() => setShowGcashExample(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 ml-2"
-              >
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex justify-center mb-3">
-              <img 
-                src="/gcash sample.png" 
-                alt="GCash Verified Example" 
-                className="w-full h-auto rounded border border-gray-300 dark:border-gray-600"
-                style={{ maxHeight: 'calc(90vh - 150px)' }}
-              />
-            </div>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center">
-              Your screenshot should show your verified GCash account similar to this example.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

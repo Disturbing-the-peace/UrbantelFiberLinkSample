@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AgentApplication, Referrer } from '@/types';
-import { agentApplicationsApi, referrersApi } from '@/lib/api';
+import { agentApplicationsApi, referrersApi, getAccessToken } from '@/lib/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Pagination from '@/components/common/Pagination';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,9 +114,110 @@ export default function AgentApplicationsPage() {
     }
   };
 
-  const handleDownloadDocument = async (url: string, filename: string) => {
+  const handleDownloadDocument = async (storagePath: string, filename: string) => {
+    if (!selectedApplication) return;
+    
     try {
-      const response = await fetch(url);
+      // Extract document type from storage path
+      // Path format: "app-id/documentType_timestamp.ext"
+      const pathParts = storagePath.split('/');
+      const filenamePart = pathParts[pathParts.length - 1]; // e.g., "valid_id_1234.png"
+      
+      // Document type is everything before the last underscore followed by timestamp
+      // valid_id_1234.png -> valid_id
+      // resume_1234.docx -> resume
+      // gcash_screenshot_1234.png -> gcash_screenshot
+      const lastUnderscoreIndex = filenamePart.lastIndexOf('_');
+      const documentType = lastUnderscoreIndex > 0 
+        ? filenamePart.substring(0, lastUnderscoreIndex)
+        : filenamePart.split('.')[0];
+      
+      console.log(`[Download] Extracted document type: ${documentType} from ${filenamePart}`);
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const token = await getAccessToken();
+      
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+      
+      const response = await fetch(
+        `${apiUrl}/api/agent-applications/${selectedApplication.id}/documents/${documentType}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+      
+      // Get filename from Content-Disposition header or use provided filename
+      let finalFilename = filename;
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+        if (filenameMatch) {
+          finalFilename = filenameMatch[1];
+        }
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = finalFilename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to download document');
+    }
+  };
+
+  const handleBulkDownload = async (application: AgentApplication) => {
+    const loadingToast = toast.loading('Preparing documents for download...');
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const token = await getAccessToken();
+      
+      if (!token) {
+        toast.dismiss(loadingToast);
+        toast.error('Authentication required');
+        return;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/api/agent-applications/${application.id}/documents/download-all`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to download documents' }));
+        throw new Error(errorData.error || 'Failed to download documents');
+      }
+
+      // Get filename from Content-Disposition or use default
+      let filename = `${application.first_name}_${application.last_name}_agent_application.zip`;
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+?)"?$/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      // Download the ZIP file
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -126,8 +227,14 @@ export default function AgentApplicationsPage() {
       a.click();
       window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
+
+      toast.dismiss(loadingToast);
+      toast.success('Documents downloaded successfully');
     } catch (err) {
-      toast.error('Failed to download document');
+      toast.dismiss(loadingToast);
+      console.error('Bulk download error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to download documents';
+      toast.error(errorMessage);
     }
   };
 
@@ -310,6 +417,13 @@ export default function AgentApplicationsPage() {
                               <Eye size={20} />
                             </button>
                             <button
+                              onClick={() => handleBulkDownload(application)}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                              title="Download All Documents"
+                            >
+                              <Download size={20} />
+                            </button>
+                            <button
                               onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                               title="Delete Application"
@@ -370,6 +484,13 @@ export default function AgentApplicationsPage() {
                       >
                         <Eye size={16} />
                         View
+                      </button>
+                      <button
+                        onClick={() => handleBulkDownload(application)}
+                        className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                        title="Download All"
+                      >
+                        <Download size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteApplication(application.id, `${application.first_name} ${application.last_name}`)}
@@ -467,7 +588,7 @@ export default function AgentApplicationsPage() {
                   <div className="space-y-2">
                     {selectedApplication.resume_url && (
                       <button
-                        onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume.pdf')}
+                        onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume')}
                         className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">Resume</span>
@@ -476,7 +597,7 @@ export default function AgentApplicationsPage() {
                     )}
                     {selectedApplication.valid_id_url && (
                       <button
-                        onClick={() => handleDownloadDocument(selectedApplication.valid_id_url!, 'valid-id.jpg')}
+                        onClick={() => handleDownloadDocument(selectedApplication.valid_id_url!, 'valid-id')}
                         className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">Valid ID with 3 Signatures</span>
@@ -485,7 +606,7 @@ export default function AgentApplicationsPage() {
                     )}
                     {selectedApplication.barangay_clearance_url && (
                       <button
-                        onClick={() => handleDownloadDocument(selectedApplication.barangay_clearance_url!, 'barangay-clearance.jpg')}
+                        onClick={() => handleDownloadDocument(selectedApplication.barangay_clearance_url!, 'barangay-clearance')}
                         className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">Barangay Clearance</span>
@@ -494,7 +615,7 @@ export default function AgentApplicationsPage() {
                     )}
                     {selectedApplication.gcash_screenshot_url && (
                       <button
-                        onClick={() => handleDownloadDocument(selectedApplication.gcash_screenshot_url!, 'gcash-verified.jpg')}
+                        onClick={() => handleDownloadDocument(selectedApplication.gcash_screenshot_url!, 'gcash-verified')}
                         className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                       >
                         <span className="text-sm text-gray-900 dark:text-white">GCash Verified Screenshot</span>
