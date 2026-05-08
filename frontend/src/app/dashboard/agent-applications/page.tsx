@@ -7,7 +7,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Pagination from '@/components/common/Pagination';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { Download, Eye, Trash2, UserPlus } from 'lucide-react';
+import { Download, Eye, Trash2, UserPlus, ZoomIn } from 'lucide-react';
 
 export default function AgentApplicationsPage() {
   const [applications, setApplications] = useState<AgentApplication[]>([]);
@@ -15,6 +15,7 @@ export default function AgentApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<AgentApplication | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { user } = useAuth();
   const toast = useToast();
   
@@ -587,40 +588,69 @@ export default function AgentApplicationsPage() {
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Documents</h3>
                   <div className="space-y-2">
                     {selectedApplication.resume_url && (
-                      <button
-                        onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume')}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      >
-                        <span className="text-sm text-gray-900 dark:text-white">Resume</span>
-                        <Download size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume')}
+                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          <span className="text-sm text-gray-900 dark:text-white">Resume</span>
+                          <Download size={16} />
+                        </button>
+                      </div>
                     )}
                     {selectedApplication.valid_id_url && (
-                      <button
-                        onClick={() => handleDownloadDocument(selectedApplication.valid_id_url!, 'valid-id')}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      >
-                        <span className="text-sm text-gray-900 dark:text-white">Valid ID with 3 Signatures</span>
-                        <Download size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDownloadDocument(selectedApplication.valid_id_url!, 'valid-id')}
+                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          <span className="text-sm text-gray-900 dark:text-white">Valid ID with 3 Signatures</span>
+                          <Download size={16} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedImage(selectedApplication.valid_id_url!)}
+                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                          title="Preview"
+                        >
+                          <ZoomIn size={16} />
+                        </button>
+                      </div>
                     )}
                     {selectedApplication.barangay_clearance_url && (
-                      <button
-                        onClick={() => handleDownloadDocument(selectedApplication.barangay_clearance_url!, 'barangay-clearance')}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      >
-                        <span className="text-sm text-gray-900 dark:text-white">Barangay Clearance</span>
-                        <Download size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDownloadDocument(selectedApplication.barangay_clearance_url!, 'barangay-clearance')}
+                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          <span className="text-sm text-gray-900 dark:text-white">Barangay Clearance</span>
+                          <Download size={16} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedImage(selectedApplication.barangay_clearance_url!)}
+                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                          title="Preview"
+                        >
+                          <ZoomIn size={16} />
+                        </button>
+                      </div>
                     )}
                     {selectedApplication.gcash_screenshot_url && (
-                      <button
-                        onClick={() => handleDownloadDocument(selectedApplication.gcash_screenshot_url!, 'gcash-verified')}
-                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                      >
-                        <span className="text-sm text-gray-900 dark:text-white">GCash Verified Screenshot</span>
-                        <Download size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDownloadDocument(selectedApplication.gcash_screenshot_url!, 'gcash-verified')}
+                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                          <span className="text-sm text-gray-900 dark:text-white">GCash Verified Screenshot</span>
+                          <Download size={16} />
+                        </button>
+                        <button
+                          onClick={() => setSelectedImage(selectedApplication.gcash_screenshot_url!)}
+                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                          title="Preview"
+                        >
+                          <ZoomIn size={16} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -629,6 +659,102 @@ export default function AgentApplicationsPage() {
           </div>
         </div>
       )}
+
+      {/* Image Viewer Modal */}
+      {selectedImage && (
+        <ImageViewerModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ImageViewerModalProps {
+  imageUrl: string;
+  onClose: () => void;
+}
+
+function ImageViewerModal({ imageUrl, onClose }: ImageViewerModalProps) {
+  const [imageData, setImageData] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImage = async () => {
+      try {
+        // Extract document type and application ID from storage path
+        // Path format: "app-id/documentType_timestamp.ext"
+        const pathParts = imageUrl.split('/');
+        const applicationId = pathParts[0];
+        const filenamePart = pathParts[pathParts.length - 1];
+        const lastUnderscoreIndex = filenamePart.lastIndexOf('_');
+        const documentType = lastUnderscoreIndex > 0 
+          ? filenamePart.substring(0, lastUnderscoreIndex)
+          : filenamePart.split('.')[0];
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const token = await getAccessToken();
+        
+        if (!token) {
+          throw new Error('No access token available');
+        }
+        
+        const response = await fetch(
+          `${apiUrl}/api/agent-applications/${applicationId}/documents/${documentType}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Failed to fetch image');
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setImageData(url);
+      } catch (err) {
+        console.error('Error loading image:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImage();
+
+    return () => {
+      if (imageData) {
+        URL.revokeObjectURL(imageData);
+      }
+    };
+  }, [imageUrl]);
+  
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60] p-4"
+      onClick={onClose}
+    >
+      <div className="relative max-w-7xl max-h-full">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300 z-10"
+        >
+          ×
+        </button>
+        {loading ? (
+          <div className="flex items-center justify-center p-20">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : (
+          <img
+            src={imageData}
+            alt="Document"
+            className="max-w-full max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+      </div>
     </div>
   );
 }
