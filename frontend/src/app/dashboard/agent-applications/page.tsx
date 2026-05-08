@@ -586,71 +586,45 @@ export default function AgentApplicationsPage() {
 
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Documents</h3>
-                  <div className="space-y-2">
-                    {selectedApplication.resume_url && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume')}
-                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          <span className="text-sm text-gray-900 dark:text-white">Resume</span>
-                          <Download size={16} />
-                        </button>
-                      </div>
-                    )}
+                  
+                  {/* Document Thumbnails Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                     {selectedApplication.valid_id_url && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDownloadDocument(selectedApplication.valid_id_url!, 'valid-id')}
-                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          <span className="text-sm text-gray-900 dark:text-white">Valid ID with 3 Signatures</span>
-                          <Download size={16} />
-                        </button>
-                        <button
-                          onClick={() => setSelectedImage(selectedApplication.valid_id_url!)}
-                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                          title="Preview"
-                        >
-                          <ZoomIn size={16} />
-                        </button>
-                      </div>
+                      <AgentDocumentThumbnail
+                        label="Valid ID with 3 Signatures"
+                        url={selectedApplication.valid_id_url}
+                        applicationId={selectedApplication.id}
+                        onClick={() => setSelectedImage(selectedApplication.valid_id_url!)}
+                      />
                     )}
                     {selectedApplication.barangay_clearance_url && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDownloadDocument(selectedApplication.barangay_clearance_url!, 'barangay-clearance')}
-                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          <span className="text-sm text-gray-900 dark:text-white">Barangay Clearance</span>
-                          <Download size={16} />
-                        </button>
-                        <button
-                          onClick={() => setSelectedImage(selectedApplication.barangay_clearance_url!)}
-                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                          title="Preview"
-                        >
-                          <ZoomIn size={16} />
-                        </button>
-                      </div>
+                      <AgentDocumentThumbnail
+                        label="Barangay Clearance"
+                        url={selectedApplication.barangay_clearance_url}
+                        applicationId={selectedApplication.id}
+                        onClick={() => setSelectedImage(selectedApplication.barangay_clearance_url!)}
+                      />
                     )}
                     {selectedApplication.gcash_screenshot_url && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDownloadDocument(selectedApplication.gcash_screenshot_url!, 'gcash-verified')}
-                          className="flex-1 flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          <span className="text-sm text-gray-900 dark:text-white">GCash Verified Screenshot</span>
-                          <Download size={16} />
-                        </button>
-                        <button
-                          onClick={() => setSelectedImage(selectedApplication.gcash_screenshot_url!)}
-                          className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                          title="Preview"
-                        >
-                          <ZoomIn size={16} />
-                        </button>
-                      </div>
+                      <AgentDocumentThumbnail
+                        label="GCash Verified"
+                        url={selectedApplication.gcash_screenshot_url}
+                        applicationId={selectedApplication.id}
+                        onClick={() => setSelectedImage(selectedApplication.gcash_screenshot_url!)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Download Buttons */}
+                  <div className="space-y-2">
+                    {selectedApplication.resume_url && (
+                      <button
+                        onClick={() => handleDownloadDocument(selectedApplication.resume_url!, 'resume')}
+                        className="w-full flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                      >
+                        <span className="text-sm text-gray-900 dark:text-white">Resume</span>
+                        <Download size={16} />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -754,6 +728,94 @@ function ImageViewerModal({ imageUrl, onClose }: ImageViewerModalProps) {
             onClick={(e) => e.stopPropagation()}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+interface AgentDocumentThumbnailProps {
+  label: string;
+  url: string;
+  applicationId: string;
+  onClick: () => void;
+}
+
+function AgentDocumentThumbnail({ label, url, applicationId, onClick }: AgentDocumentThumbnailProps) {
+  const [imageData, setImageData] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchImage = async () => {
+      try {
+        // Extract document type from storage path
+        const pathParts = url.split('/');
+        const filenamePart = pathParts[pathParts.length - 1];
+        const lastUnderscoreIndex = filenamePart.lastIndexOf('_');
+        const documentType = lastUnderscoreIndex > 0 
+          ? filenamePart.substring(0, lastUnderscoreIndex)
+          : filenamePart.split('.')[0];
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const token = await getAccessToken();
+        
+        if (!token) {
+          throw new Error('No access token available');
+        }
+        
+        const response = await fetch(
+          `${apiUrl}/api/agent-applications/${applicationId}/documents/${documentType}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch image');
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setImageData(blobUrl);
+      } catch (err) {
+        console.error('Error loading image:', err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImage();
+
+    return () => {
+      if (imageData) {
+        URL.revokeObjectURL(imageData);
+      }
+    };
+  }, [url, applicationId]);
+  
+  return (
+    <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+      <div
+        onClick={onClick}
+        className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden"
+      >
+        {loading ? (
+          <LoadingSpinner size="md" />
+        ) : error ? (
+          <div className="text-red-500 dark:text-red-400 text-xs text-center p-2">Failed to load</div>
+        ) : (
+          <img
+            src={imageData}
+            alt={label}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+      <div className="p-2 bg-white dark:bg-gray-800">
+        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">{label}</p>
       </div>
     </div>
   );
