@@ -30,7 +30,7 @@ router.post('/applications', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (!images || !images.housePhoto || !images.governmentId || !images.signature || !images.idSelfie) {
+    if (!images || !images.housePhoto || !images.governmentId || !images.idSelfie) {
       return res.status(400).json({ error: 'All required images must be provided' });
     }
 
@@ -136,22 +136,13 @@ router.post('/applications', async (req: Request, res: Response) => {
         'house_photo.png'
       );
 
-      // Upload government ID
+      // Upload government ID (with signatures)
       const govIdBuffer = base64ToBuffer(images.governmentId);
       imageUrls.government_id_url = await uploadDocument(
         application.id,
         govIdBuffer,
         'government_id',
         'government_id.png'
-      );
-
-      // Upload signature
-      const signatureBuffer = base64ToBuffer(images.signature);
-      imageUrls.signature_url = await uploadDocument(
-        application.id,
-        signatureBuffer,
-        'signature',
-        'signature.png'
       );
 
       // Upload ID selfie
@@ -242,7 +233,7 @@ router.post('/system-applications', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (!images || !images.housePhoto || !images.governmentId || !images.signature || !images.idSelfie) {
+    if (!images || !images.housePhoto || !images.governmentId || !images.idSelfie) {
       return res.status(400).json({ error: 'All required images must be provided' });
     }
 
@@ -329,22 +320,13 @@ router.post('/system-applications', async (req: Request, res: Response) => {
         'house_photo.png'
       );
 
-      // Upload government ID
+      // Upload government ID (with signatures)
       const govIdBuffer = base64ToBuffer(images.governmentId);
       imageUrls.government_id_url = await uploadDocument(
         application.id,
         govIdBuffer,
         'government_id',
         'government_id.png'
-      );
-
-      // Upload signature
-      const signatureBuffer = base64ToBuffer(images.signature);
-      imageUrls.signature_url = await uploadDocument(
-        application.id,
-        signatureBuffer,
-        'signature',
-        'signature.png'
       );
 
       // Upload ID selfie

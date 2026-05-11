@@ -144,9 +144,8 @@ router.get('/subscribers/:id/documents', verifyToken, checkAdmin, async (req: Re
     // Collect all document URLs
     const documentUrls = [
       { url: application.house_photo_url, name: 'house_photo' },
-      { url: application.government_id_url, name: 'government_id' },
+      { url: application.government_id_url, name: 'government_id_with_signatures' },
       { url: application.id_selfie_url, name: 'id_selfie' },
-      { url: application.signature_url, name: 'signature' },
       { url: application.proof_of_billing_url, name: 'proof_of_billing' },
       { url: application.proof_of_income_url, name: 'proof_of_income' }
     ].filter(doc => doc.url);

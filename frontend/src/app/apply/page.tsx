@@ -251,7 +251,6 @@ function ApplicationFormContent() {
       const images = {
         housePhoto: await fileToBase64(uploadedImages.housePhoto!),
         governmentId: await fileToBase64(uploadedImages.governmentIdWithSignature!),
-        signature: await fileToBase64(uploadedImages.governmentIdWithSignature!), // Same image for both
         idSelfie: await fileToBase64(uploadedImages.idSelfie!),
         proofOfBilling: uploadedImages.proofOfBilling ? await fileToBase64(uploadedImages.proofOfBilling) : undefined,
         proofOfIncome: uploadedImages.proofOfIncome ? await fileToBase64(uploadedImages.proofOfIncome) : undefined,

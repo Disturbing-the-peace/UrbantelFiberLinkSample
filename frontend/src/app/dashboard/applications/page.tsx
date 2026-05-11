@@ -1045,7 +1045,7 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
                     ) : (
                       <>
                         {!application.house_photo_url && !application.government_id_url && 
-                         !application.id_selfie_url && !application.signature_url &&
+                         !application.id_selfie_url &&
                          !application.proof_of_billing_url && !application.proof_of_income_url ? (
                           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                             No documents uploaded
@@ -1061,7 +1061,7 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
                             )}
                             {application.government_id_url && (
                               <DocumentThumbnail
-                                label="Government ID"
+                                label="Government ID with Signatures"
                                 url={application.government_id_url}
                                 onClick={() => setSelectedImage(application.government_id_url!)}
                               />
@@ -1071,13 +1071,6 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
                                 label="ID Selfie"
                                 url={application.id_selfie_url}
                                 onClick={() => setSelectedImage(application.id_selfie_url!)}
-                              />
-                            )}
-                            {application.signature_url && (
-                              <DocumentThumbnail
-                                label="Signature"
-                                url={application.signature_url}
-                                onClick={() => setSelectedImage(application.signature_url!)}
                               />
                             )}
                             {application.proof_of_billing_url && (

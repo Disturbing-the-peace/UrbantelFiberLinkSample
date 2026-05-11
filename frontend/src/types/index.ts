@@ -74,9 +74,8 @@ export interface Application {
   latitude?: number;
   longitude?: number;
   house_photo_url?: string;
-  government_id_url?: string;
+  government_id_url?: string; // Government ID with signatures (combined image)
   id_selfie_url?: string;
-  signature_url?: string;
   proof_of_billing_url?: string;
   proof_of_income_url?: string;
   status: 'Submitted' | 'Under Review' | 'Approved' | 'Scheduled for Installation' | 'Activated' | 'Denied' | 'Voided';
