@@ -1045,7 +1045,8 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
                     ) : (
                       <>
                         {!application.house_photo_url && !application.government_id_url && 
-                         !application.id_selfie_url && !application.signature_url ? (
+                         !application.id_selfie_url && !application.signature_url &&
+                         !application.proof_of_billing_url && !application.proof_of_income_url ? (
                           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                             No documents uploaded
                           </div>
@@ -1077,6 +1078,20 @@ function ApplicationDetailModal({ application, onClose, onUpdate }: ApplicationD
                                 label="Signature"
                                 url={application.signature_url}
                                 onClick={() => setSelectedImage(application.signature_url!)}
+                              />
+                            )}
+                            {application.proof_of_billing_url && (
+                              <DocumentThumbnail
+                                label="Proof of Billing"
+                                url={application.proof_of_billing_url}
+                                onClick={() => setSelectedImage(application.proof_of_billing_url!)}
+                              />
+                            )}
+                            {application.proof_of_income_url && (
+                              <DocumentThumbnail
+                                label="Proof of Income"
+                                url={application.proof_of_income_url}
+                                onClick={() => setSelectedImage(application.proof_of_income_url!)}
                               />
                             )}
                           </div>

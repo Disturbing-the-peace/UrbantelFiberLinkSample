@@ -77,6 +77,8 @@ export interface Application {
   government_id_url?: string;
   id_selfie_url?: string;
   signature_url?: string;
+  proof_of_billing_url?: string;
+  proof_of_income_url?: string;
   status: 'Submitted' | 'Under Review' | 'Approved' | 'Scheduled for Installation' | 'Activated' | 'Denied' | 'Voided';
   status_reason?: string;
   agent_id: string;

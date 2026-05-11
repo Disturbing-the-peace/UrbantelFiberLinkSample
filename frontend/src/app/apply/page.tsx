@@ -16,6 +16,8 @@ function ApplicationFormContent() {
   const { resolvedTheme, setTheme } = useTheme();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [docStep, setDocStep] = useState(1); // Track document upload sub-steps
+  const [showExampleImage, setShowExampleImage] = useState(true); // Control example image visibility
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<'Residential' | 'Business' | null>(null);
@@ -332,6 +334,54 @@ function ApplicationFormContent() {
   // Check if proof of income is required (plans >= 3000)
   const requiresProofOfIncome = selectedPlan ? selectedPlan.price >= 3000 : false;
 
+  // Calculate total document steps based on plan requirements
+  const getTotalDocSteps = () => {
+    let steps = 3; // Base: house photo, gov ID, selfie
+    if (requiresProofOfBilling) steps++;
+    if (requiresProofOfIncome) steps++;
+    return steps;
+  };
+
+  // Check if current doc step is complete
+  const isCurrentDocStepComplete = () => {
+    if (docStep === 1) return !!uploadedImages.housePhoto;
+    if (docStep === 2) return !!uploadedImages.governmentIdWithSignature;
+    if (docStep === 3) return !!uploadedImages.idSelfie;
+    
+    // Step 4 logic depends on what's required
+    if (docStep === 4) {
+      if (requiresProofOfBilling) return !!uploadedImages.proofOfBilling;
+      if (requiresProofOfIncome) return !!uploadedImages.proofOfIncome;
+    }
+    
+    // Step 5 is only for proof of income when billing is also required
+    if (docStep === 5 && requiresProofOfBilling && requiresProofOfIncome) {
+      return !!uploadedImages.proofOfIncome;
+    }
+    
+    return false;
+  };
+
+  const nextDocStep = () => {
+    if (!isCurrentDocStepComplete()) {
+      toast.error('Palihug i-upload ang dokumento sa dili ka makapadayon');
+      return;
+    }
+    
+    const totalSteps = getTotalDocSteps();
+    if (docStep < totalSteps) {
+      setDocStep(docStep + 1);
+      setShowExampleImage(true); // Show example for next step
+    }
+  };
+
+  const prevDocStep = () => {
+    if (docStep > 1) {
+      setDocStep(docStep - 1);
+      setShowExampleImage(true); // Show example when going back
+    }
+  };
+
   const canProceedToStep2 = firstName && lastName && birthday && phoneNumber;
   const canProceedToStep3 = selectedPlanId;
   const canProceedToStep4 = location && location.address && location.latitude && location.longitude;
@@ -367,12 +417,21 @@ function ApplicationFormContent() {
     
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
+      // Reset docStep and show example when entering Step 4
+      if (currentStep === 3) {
+        setDocStep(1);
+        setShowExampleImage(true);
+      }
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      // Reset docStep when leaving Step 4
+      if (currentStep === 4) {
+        setDocStep(1);
+      }
     }
   };
 
@@ -996,85 +1055,48 @@ function ApplicationFormContent() {
               </div>
             )}
 
-            {/* Step 4: Document Upload */}
+            {/* Step 4: Document Upload - Multi-step */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                {!canSubmit && (
-                  <div className="p-3 bg-teal-50 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700 rounded-lg mb-4">
-                    <p className="text-xs sm:text-sm text-teal-800 dark:text-teal-200 flex items-center">
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      Palihug i-upload ang tanan nga kinahanglanon nga dokumento
+                {/* Document Step 1: House Photo */}
+                {docStep === 1 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Hakbang 1: Litrato sa Balay
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Kinahanglan namo og tin-aw nga litrato sa gawas sa imong balay.
                     </p>
-                  </div>
-                )}
-                
-                <ImageUpload
-                  label="Litrato sa Balay"
-                  name="housePhoto"
-                  description="Kinahanglan namo og tin-aw nga litrato sa gawas sa imong balay aron matabangan ang among mga teknisyan sa pagpangita sa imong property ug pagplano sa ruta sa fiber installation."
-                  icon={
-                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  }
-                  required
-                  onImageChange={handleImageChange}
-                  maxSizeMB={5}
-                />
-                
-                <ImageUpload
-                  label="Government ID uban sa Pirma"
-                  name="governmentIdWithSignature"
-                  description="I-upload ang litrato nga nagpakita sa imong balido nga government-issued ID (driver's license, passport, o national ID) uban sa imong pirma nga makita sa samang imahe. Kini nagpamatuod sa imong identidad."
-                  icon={
-                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                    </svg>
-                  }
-                  required
-                  onImageChange={handleImageChange}
-                  maxSizeMB={5}
-                />
-                
-                <ImageUpload
-                  label="Selfie uban sa ID"
-                  name="idSelfie"
-                  description="Kuhaa og selfie nga naghupot sa imong government ID tupad sa imong nawong. Kini nagkumpirma nga ikaw ang tinuod nga tag-iya sa ID ug nagpugong sa identity fraud."
-                  icon={
-                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  }
-                  required
-                  onImageChange={handleImageChange}
-                  maxSizeMB={5}
-                />
-
-                {/* Conditional: Proof of Billing (for plans >= 2000) */}
-                {requiresProofOfBilling && (
-                  <div className="border-t-2 border-teal-200 pt-6">
-                    <div className="mb-4 p-4 bg-teal-50 border border-teal-300 rounded-lg">
-                      <p className="text-sm text-teal-900 font-semibold flex items-center">
-                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                        Dugang nga Dokumento para sa Plano nga ₱{selectedPlan?.price.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-teal-800 mt-2">
-                        Ang imong napiling plano nagkinahanglan og dugang nga proof of billing. 
-                        Ang dokumento kinahanglan dated within 3 months sa dili pa ang application.
-                      </p>
+                    
+                    {/* Collapsible Example image */}
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowExampleImage(!showExampleImage)}
+                        className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {showExampleImage ? '▼' : '▶'} Pananglitan sa litrato sa balay
+                        </span>
+                      </button>
+                      {showExampleImage && (
+                        <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <img 
+                            src="/hp_sample1.jpg" 
+                            alt="House photo example" 
+                            className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                      )}
                     </div>
-
+                    
                     <ImageUpload
-                      label="Proof of Billing"
-                      name="proofOfBilling"
-                      description="I-upload ang utility bill (kuryente, tubig, internet) o similar nga dokumento nga nagpakita sa imong address. Kinahanglan dated within 3 months (e.g., Enero-Marso 2026 para sa Abril 2026 application)."
+                      label="Litrato sa Balay"
+                      name="housePhoto"
+                      description="Tin-aw nga litrato sa gawas sa imong balay aron matabangan ang among mga teknisyan sa pagpangita sa imong property ug pagplano sa ruta sa fiber installation."
                       icon={
                         <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
                       }
                       required
@@ -1084,28 +1106,266 @@ function ApplicationFormContent() {
                   </div>
                 )}
 
-                {/* Conditional: Proof of Income (for plans >= 3000) */}
-                {requiresProofOfIncome && (
-                  <div className={requiresProofOfBilling ? '' : 'border-t-2 border-teal-200 pt-6'}>
-                    {!requiresProofOfBilling && (
-                      <div className="mb-4 p-4 bg-teal-50 border border-teal-300 rounded-lg">
-                        <p className="text-sm text-teal-900 font-semibold flex items-center">
-                          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                          Dugang nga Dokumento para sa Plano nga ₱{selectedPlan?.price.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-teal-800 mt-2">
-                          Ang imong napiling plano nagkinahanglan og dugang nga proof of income. 
-                          Ang dokumento kinahanglan dated within 3 months sa dili pa ang application.
-                        </p>
-                      </div>
-                    )}
+                {/* Document Step 2: Government ID */}
+                {docStep === 2 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Hakbang 2: Government ID uban sa Pirma
+                    </h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-blue-800 dark:text-blue-200 font-medium mb-2">
+                        📝 Importante nga Instruksyon:
+                      </p>
+                      <ul className="text-sm text-blue-700 dark:text-blue-300 list-disc list-inside space-y-1">
+                        <li>Ibutang ang imong valid ID sa puti nga papel</li>
+                        <li>Idugang 3 ka pirma sa papel palibot sa ID</li>
+                        <li>Kuhaa og tin-aw nga litrato sa ID uban sa mga pirma</li>
+                      </ul>
+                    </div>
+                    
+                    {/* Collapsible Example image */}
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowExampleImage(!showExampleImage)}
+                        className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {showExampleImage ? '▼' : '▶'} Pananglitan sa Valid ID uban sa 3 ka pirma
+                        </span>
+                      </button>
+                      {showExampleImage && (
+                        <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <img 
+                            src="/specimen.jpg" 
+                            alt="Valid ID with 3 signatures example" 
+                            className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <ImageUpload
+                      label="Government ID uban sa 3 ka Pirma"
+                      name="governmentIdWithSignature"
+                      description="I-upload ang litrato sa imong balido nga government-issued ID (driver's license, passport, o national ID) uban sa 3 ka pirma sa papel."
+                      icon={
+                        <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                        </svg>
+                      }
+                      required
+                      onImageChange={handleImageChange}
+                      maxSizeMB={5}
+                    />
+                  </div>
+                )}
 
+                {/* Document Step 3: ID Selfie */}
+                {docStep === 3 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Hakbang 3: Selfie uban sa ID
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Kuhaa og selfie nga naghupot sa imong government ID tupad sa imong nawong.
+                    </p>
+                    
+                    {/* Collapsible Example image */}
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowExampleImage(!showExampleImage)}
+                        className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {showExampleImage ? '▼' : '▶'} Pananglitan sa selfie uban sa ID
+                        </span>
+                      </button>
+                      {showExampleImage && (
+                        <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <img 
+                            src="/SID_sample.jpg" 
+                            alt="ID selfie example" 
+                            className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <ImageUpload
+                      label="Selfie uban sa ID"
+                      name="idSelfie"
+                      description="Selfie nga naghupot sa imong government ID tupad sa imong nawong. Kini nagkumpirma nga ikaw ang tinuod nga tag-iya sa ID."
+                      icon={
+                        <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      }
+                      required
+                      onImageChange={handleImageChange}
+                      maxSizeMB={5}
+                    />
+                  </div>
+                )}
+
+                {/* Document Step 4: Proof of Billing OR Proof of Income */}
+                {docStep === 4 && (requiresProofOfBilling || requiresProofOfIncome) && (
+                  <div>
+                    {requiresProofOfBilling ? (
+                      <>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                          Hakbang 4: Proof of Billing
+                        </h3>
+                        <div className="mb-4 p-4 bg-teal-50 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700 rounded-lg">
+                          <p className="text-sm text-teal-900 dark:text-teal-200 font-semibold flex items-center">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            Kinahanglan para sa Plano nga ₱{selectedPlan?.price.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-teal-800 dark:text-teal-300 mt-2">
+                            Ang dokumento kinahanglan dated within 3 months sa dili pa ang application.
+                          </p>
+                        </div>
+                        
+                        {/* Collapsible Example image */}
+                        <div className="mb-4">
+                          <button
+                            type="button"
+                            onClick={() => setShowExampleImage(!showExampleImage)}
+                            className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                          >
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {showExampleImage ? '▼' : '▶'} Pananglitan sa proof of billing
+                            </span>
+                          </button>
+                          {showExampleImage && (
+                            <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                              <img 
+                                src="/proof of billing sample.jpg" 
+                                alt="Proof of billing example" 
+                                className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <ImageUpload
+                          label="Proof of Billing"
+                          name="proofOfBilling"
+                          description="I-upload ang utility bill (kuryente, tubig, internet) o similar nga dokumento nga nagpakita sa imong address. Kinahanglan dated within 3 months."
+                          icon={
+                            <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          }
+                          required
+                          onImageChange={handleImageChange}
+                          maxSizeMB={5}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                          Hakbang 4: Proof of Income
+                        </h3>
+                        <div className="mb-4 p-4 bg-teal-50 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700 rounded-lg">
+                          <p className="text-sm text-teal-900 dark:text-teal-200 font-semibold flex items-center">
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            Kinahanglan para sa Plano nga ₱{selectedPlan?.price.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-teal-800 dark:text-teal-300 mt-2">
+                            Ang dokumento kinahanglan dated within 3 months sa dili pa ang application.
+                          </p>
+                        </div>
+                        
+                        {/* Collapsible Example image */}
+                        <div className="mb-4">
+                          <button
+                            type="button"
+                            onClick={() => setShowExampleImage(!showExampleImage)}
+                            className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                          >
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {showExampleImage ? '▼' : '▶'} Pananglitan sa proof of income
+                            </span>
+                          </button>
+                          {showExampleImage && (
+                            <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                              <img 
+                                src="/inc.png" 
+                                alt="Proof of income example" 
+                                className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <ImageUpload
+                          label="Proof of Income"
+                          name="proofOfIncome"
+                          description="I-upload ang payslip, ITR (Income Tax Return), Certificate of Employment with salary, o similar nga dokumento nga nagpakita sa imong kita. Kinahanglan dated within 3 months."
+                          icon={
+                            <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          }
+                          required
+                          onImageChange={handleImageChange}
+                          maxSizeMB={5}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Document Step 5: Proof of Income (if required) */}
+                {docStep === 5 && requiresProofOfIncome && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      Hakbang {requiresProofOfBilling ? '5' : '4'}: Proof of Income
+                    </h3>
+                    <div className="mb-4 p-4 bg-teal-50 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700 rounded-lg">
+                      <p className="text-sm text-teal-900 dark:text-teal-200 font-semibold flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        Kinahanglan para sa Plano nga ₱{selectedPlan?.price.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-teal-800 dark:text-teal-300 mt-2">
+                        Ang dokumento kinahanglan dated within 3 months sa dili pa ang application.
+                      </p>
+                    </div>
+                    
+                    {/* Collapsible Example image */}
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowExampleImage(!showExampleImage)}
+                        className="flex items-center justify-between w-full p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {showExampleImage ? '▼' : '▶'} Pananglitan sa proof of income
+                        </span>
+                      </button>
+                      {showExampleImage && (
+                        <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <img 
+                            src="/inc.png" 
+                            alt="Proof of income example" 
+                            className="w-full max-w-md mx-auto rounded border border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    
                     <ImageUpload
                       label="Proof of Income"
                       name="proofOfIncome"
-                      description="I-upload ang payslip, ITR (Income Tax Return), Certificate of Employment with salary, o similar nga dokumento nga nagpakita sa imong kita. Kinahanglan dated within 3 months (e.g., Enero-Marso 2026 para sa Abril 2026 application)."
+                      description="I-upload ang payslip, ITR (Income Tax Return), Certificate of Employment with salary, o similar nga dokumento nga nagpakita sa imong kita. Kinahanglan dated within 3 months."
                       icon={
                         <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1117,6 +1377,20 @@ function ApplicationFormContent() {
                     />
                   </div>
                 )}
+
+                {/* Document progress indicator */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <span>Pag-upload sa Dokumento</span>
+                    <span>{docStep} of {getTotalDocSteps()}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                    <div 
+                      className="bg-teal-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(docStep / getTotalDocSteps()) * 100}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1129,10 +1403,10 @@ function ApplicationFormContent() {
               )}
               
               <div className="flex justify-between items-center gap-3 sm:gap-4">
-                {currentStep > 1 ? (
+                {currentStep > 1 || (currentStep === 4 && docStep > 1) ? (
                   <button
                     type="button"
-                    onClick={prevStep}
+                    onClick={currentStep === 4 && docStep > 1 ? prevDocStep : prevStep}
                     className="px-4 sm:px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm sm:text-base font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 active:bg-gray-300 dark:active:bg-gray-500 transition-all flex items-center touch-manipulation"
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1156,6 +1430,17 @@ function ApplicationFormContent() {
                       (currentStep === 3 && !canProceedToStep4)
                     }
                     className="ml-auto px-6 sm:px-8 py-3 bg-teal-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-teal-700 active:bg-teal-800 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 transition-all flex items-center shadow-lg touch-manipulation min-h-[44px]"
+                  >
+                    Sunod
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ) : docStep < getTotalDocSteps() ? (
+                  <button
+                    type="button"
+                    onClick={nextDocStep}
+                    className="ml-auto px-6 sm:px-8 py-3 bg-teal-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-all flex items-center shadow-lg touch-manipulation min-h-[44px]"
                   >
                     Sunod
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
