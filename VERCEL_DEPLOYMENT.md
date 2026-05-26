@@ -35,6 +35,20 @@ Click **"Deploy"** - takes ~2 minutes.
 
 You'll get a URL like: `https://ulconnect.vercel.app`
 
+### 5. Configure Supabase (REQUIRED for auth to work)
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Select your project: `znnimbdzzpxlxrkzmahl`
+3. Go to **Authentication** → **URL Configuration**
+4. Add your Vercel URL to **Site URL**: `https://your-project.vercel.app`
+5. Add to **Redirect URLs**:
+   - `https://your-project.vercel.app/login`
+   - `https://your-project.vercel.app/dashboard`
+   - `https://your-project.vercel.app/**` (wildcard for all routes)
+6. Save changes
+
+**Without this step, login will fail with authentication error.**
+
 ## What Works
 
 ✅ Landing page  

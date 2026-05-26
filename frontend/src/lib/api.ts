@@ -1,7 +1,10 @@
 import { getSupabaseClient } from './supabase';
 import { cachedFetch, dataCache, getMillisecondsUntilMidnight } from './cache';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.56:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+// Demo mode - disable backend API if not configured
+const DEMO_MODE = !process.env.NEXT_PUBLIC_API_URL;
 
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
@@ -33,6 +36,12 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
+  // Demo mode - return empty data
+  if (DEMO_MODE) {
+    console.warn(`Demo mode: API call to ${endpoint} skipped`);
+    return (Array.isArray(endpoint) ? [] : {}) as T;
+  }
+
   const { requiresAuth = true, headers = {}, ...restOptions } = options;
 
   const requestHeaders: Record<string, string> = {
