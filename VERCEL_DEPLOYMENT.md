@@ -1,4 +1,4 @@
-# Vercel Deployment Guide
+    # Vercel Deployment Guide
 
 ## Quick Deploy Steps
 
@@ -15,10 +15,10 @@ git push origin main
 2. Sign in with GitHub
 3. Click **"Add New Project"**
 4. Import your `ULConnect` repository
-5. Configure:
-   - **Framework Preset**: Next.js (auto-detected)
-   - **Root Directory**: `frontend`
-   - Leave Build/Output settings as default
+5. **IMPORTANT**: Click "Edit" next to Root Directory
+6. Set **Root Directory**: `frontend` (click the folder icon and select it)
+7. Framework Preset: Next.js (auto-detected)
+8. Leave Build/Output settings as default
 
 ### 3. Add Environment Variables
 
